@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>優淨 Yujing 美髮品</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #2a7a6a;
+    --green-dark: #1a5a4a;
+    --green-light: #e8f5f0;
+    --green-mid: #9fd4c4;
+    --blue-light: #deeef8;
+    --amber: #f0c060;
+    --amber-light: #fff8e8;
+    --text: #1a1a1a;
+    --text-muted: #6b7280;
+    --border: rgba(0,0,0,0.1);
+    --bg: #ffffff;
+    --bg-2: #f8faf9;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans TC', sans-serif; background: var(--bg-2); color: var(--text); min-height: 100vh; }
+
+  /* HEADER */
+  .header {
+    background: #fff;
+    border-bottom: 0.5px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-circle {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: linear-gradient(135deg, #b8ddd4, #a8cde0);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Noto Serif TC', serif;
+    font-size: 14px; font-weight: 600; color: var(--green-dark);
+  }
+  .logo-name { font-family: 'Noto Serif TC', serif; font-size: 16px; font-weight: 500; color: var(--text); }
+  .logo-sub { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .nav-icons { display: flex; gap: 10px; align-items: center; }
+  .member-btn {
+    font-size: 12px; font-family: 'Noto Sans TC', sans-serif;
+    border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    padding: 6px 12px; background: none; cursor: pointer; color: var(--text);
+    transition: background 0.2s;
+  }
+  .member-btn:hover { background: var(--bg-2); }
+  .cart-btn {
+    position: relative; background: none; border: none;
+    cursor: pointer; font-size: 20px; padding: 4px; line-height: 1;
+  }
+  .cart-badge {
+    position: absolute; top: -2px; right: -4px;
+    background: var(--green); color: #fff; border-radius: 50%;
+    width: 17px; height: 17px; font-size: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  /* BANNER */
+  .banner {
+    background: linear-gradient(135deg, var(--green-light) 0%, var(--blue-light) 100%);
+    padding: 32px 20px 28px;
+    text-align: center;
+  }
+  .banner-badge {
+    display: inline-block;
+    background: var(--green); color: #fff;
+    font-size: 11px; padding: 4px 14px;
+    border-radius: 20px; margin-bottom: 12px;
+  }
+  .banner h1 {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 24px; font-weight: 600;
+    color: var(--green-dark); margin-bottom: 8px;
+  }
+  .banner p { font-size: 13px; color: #3a7a68; letter-spacing: 0.5px; }
+
+  /* COUPON */
+  .coupon-banner {
+    margin: 14px 16px;
+    background: var(--amber-light);
+    border: 0.5px solid var(--amber);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .coupon-icon { font-size: 22px; flex-shrink: 0; }
+  .coupon-text { font-size: 12px; color: #6b4a00; line-height: 1.6; }
+  .coupon-text strong { display: block; font-size: 13px; font-weight: 500; color: #4a3000; margin-bottom: 2px; }
+
+  /* TABS */
+  .tab-bar {
+    display: flex;
+    border-bottom: 0.5px solid var(--border);
+    background: #fff;
+    padding: 0 16px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-bar::-webkit-scrollbar { display: none; }
+  .tab {
+    padding: 10px 14px; font-size: 13px;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    color: var(--text-muted); white-space: nowrap;
+    transition: color 0.2s, border-color 0.2s;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .tab.active { color: var(--green); border-bottom-color: var(--green); font-weight: 500; }
+
+  /* PRODUCTS */
+  .section { padding: 16px; }
+  .products { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (min-width: 480px) { .products { grid-template-columns: repeat(3, 1fr); } }
+  @media (min-width: 768px) { .products { grid-template-columns: repeat(4, 1fr); } }
+
+  .product-card {
+    background: #fff;
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.2s;
+  }
+  .product-card:hover { box-shadow: 0 4px 16px rgba(42,122,106,0.1); transform: translateY(-2px); }
+  .product-img {
+    width: 100%; aspect-ratio: 1;
+    background: linear-gradient(135deg, var(--green-light), var(--blue-light));
+    border-radius: var(--radius-sm);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px; margin-bottom: 10px;
+  }
+  .product-name { font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 4px; line-height: 1.4; }
+  .product-desc { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; line-height: 1.5; }
+  .product-price { font-size: 16px; font-weight: 500; color: var(--green); font-family: 'Noto Serif TC', serif; }
+  .add-btn {
+    width: 100%; margin-top: 8px; padding: 7px;
+    background: var(--green); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 12px; cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: background 0.2s;
+  }
+  .add-btn:hover { background: var(--green-dark); }
+  .add-btn:active { transform: scale(0.98); }
+
+  /* INFO */
+  .info-section { padding: 0 16px 24px; }
+  .section-title {
+    font-size: 14px; font-weight: 500; color: var(--text);
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .info-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .info-card { background: #fff; border-radius: var(--radius-sm); padding: 12px; border: 0.5px solid var(--border); }
+  .info-label { font-size: 11px; color: var(--text-muted); margin-bottom: 5px; }
+  .info-val { font-size: 12px; color: var(--text); line-height: 1.7; }
+
+  /* FOOTER */
+  .footer {
+    background: var(--green-dark); color: rgba(255,255,255,0.7);
+    text-align: center; padding: 20px;
+    font-size: 12px; line-height: 1.8;
+  }
+  .footer strong { color: #fff; font-weight: 500; }
+
+  /* OVERLAY */
+  .overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 150; display: none;
+    backdrop-filter: blur(2px);
+  }
+  .overlay.show { display: block; }
+
+  /* CART PANEL */
+  .cart-panel {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-top: 0.5px solid var(--border);
+    border-radius: 16px 16px 0 0;
+    padding: 16px 20px 24px;
+    z-index: 200;
+    max-height: 70vh;
+    overflow-y: auto;
+    display: none;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+  .cart-panel.show { display: block; transform: translateY(0); }
+  .cart-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
+  .cart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .cart-header h2 { font-size: 15px; font-weight: 500; font-family: 'Noto Serif TC', serif; }
+  .close-btn { background: none; border: none; font-size: 18px; cursor: pointer; color: var(--text-muted); padding: 2px 6px; }
+  .close-btn:hover { color: var(--text); }
+  .cart-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 0.5px solid var(--border);
+    font-size: 13px;
+  }
+  .cart-item-name { display: flex; align-items: center; gap: 8px; }
+  .qty-ctrl { display: flex; align-items: center; gap: 8px; }
+  .qty-btn {
+    width: 24px; height: 24px;
+    background: var(--bg-2); border: 0.5px solid var(--border);
+    border-radius: 6px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s;
+  }
+  .qty-btn:hover { background: var(--green-light); }
+  .free-ship-bar {
+    background: var(--green-light); border: 0.5px solid var(--green-mid);
+    border-radius: var(--radius-sm); padding: 8px 12px;
+    font-size: 12px; color: var(--green-dark); text-align: center;
+    margin: 10px 0;
+  }
+  .cart-summary { display: flex; justify-content: space-between; align-items: center; margin-top: 12px; }
+  .total-text { font-size: 14px; font-weight: 500; }
+  .checkout-btn {
+    background: var(--green); color: #fff; border: none;
+    border-radius: var(--radius-sm); padding: 10px 24px;
+    font-size: 13px; cursor: pointer; font-family: 'Noto Sans TC', sans-serif;
+    transition: background 0.2s;
+  }
+  .checkout-btn:hover { background: var(--green-dark); }
+
+  /* MODAL */
+  .modal {
+    position: fixed; bottom: 0; left: 0; right: 0;
+    background: #fff;
+    border-radius: 16px 16px 0 0;
+    padding: 20px 20px 32px;
+    z-index: 300;
+    max-height: 90vh; overflow-y: auto;
+    display: none;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+  }
+  .modal.show { display: block; transform: translateY(0); }
+  .modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 14px; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .modal-header h2 { font-size: 16px; font-weight: 500; font-family: 'Noto Serif TC', serif; }
+  .section-divider { font-size: 13px; font-weight: 500; color: var(--text); margin: 16px 0 10px; padding-bottom: 6px; border-bottom: 0.5px solid var(--border); }
+  .radio-group { display: flex; flex-direction: column; gap: 10px; }
+  .radio-label { display: flex; align-items: center; gap: 10px; font-size: 13px; cursor: pointer; color: var(--text); }
+  .radio-label input { accent-color: var(--green); width: 15px; height: 15px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+  .form-group input, .form-group select {
+    width: 100%; padding: 9px 12px;
+    border: 0.5px solid var(--border); border-radius: var(--radius-sm);
+    font-size: 13px; background: #fff; color: var(--text);
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: border-color 0.2s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    outline: none; border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(42,122,106,0.1);
+  }
+  .submit-btn {
+    width: 100%; padding: 13px;
+    background: var(--green); color: #fff;
+    border: none; border-radius: var(--radius-sm);
+    font-size: 14px; cursor: pointer; margin-top: 6px;
+    font-family: 'Noto Sans TC', sans-serif;
+    transition: background 0.2s;
+  }
+  .submit-btn:hover { background: var(--green-dark); }
+  .submit-btn:active { transform: scale(0.99); }
+  .register-box {
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+    background: var(--bg-2); margin-top: 10px;
+  }
+  .register-box-title {
+    font-size: 13px; font-weight: 500;
+    color: var(--text); margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .coupon-tag {
+    background: var(--amber-light); color: #6b4a00;
+    font-size: 11px; padding: 2px 8px;
+    border-radius: 20px; border: 0.5px solid var(--amber);
+  }
+  .order-confirm-box {
+    background: var(--green-light); border-radius: var(--radius);
+    padding: 16px; margin-bottom: 16px;
+    font-size: 13px; color: var(--green-dark); line-height: 1.8;
+  }
+
+  /* TOAST */
+  .toast {
+    display: none; position: fixed;
+    top: 20px; left: 50%; transform: translateX(-50%);
+    background: #1a1a1a; color: #fff;
+    padding: 10px 20px; border-radius: 20px;
+    font-size: 13px; z-index: 999;
+    white-space: nowrap; font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  /* EMPTY CART */
+  .empty-cart { text-align: center; padding: 24px; color: var(--text-muted); font-size: 13px; }
+  .empty-cart .icon { font-size: 36px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="logo">
+    <div class="logo-circle">優</div>
+    <div>
+      <div class="logo-name">優淨 Yujing</div>
+      <div class="logo-sub">專業美髮護髮品牌</div>
+    </div>
+  </div>
+  <div class="nav-icons">
+    <button class="member-btn" onclick="openMemberModal()">會員登入</button>
+    <button class="cart-btn" onclick="openCart()">
+      🛒<span class="cart-badge" id="cartBadge">0</span>
+    </button>
+  </div>
+</header>
+
+<!-- BANNER -->
+<div class="banner">
+  <div class="banner-badge">🌿 天然成分 · 純淨護髮</div>
+  <h1>優淨 Yujing 美髮品</h1>
+  <p>溫和潔淨・深層修護・給頭髮最好的呵護</p>
+</div>
+
+<!-- COUPON NOTICE -->
+<div class="coupon-banner">
+  <span class="coupon-icon">🎫</span>
+  <div class="coupon-text">
+    <strong>首次註冊會員即送 $100 折價券</strong>
+    立即加入會員，下次購物即可折抵使用，無最低消費限制
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('all',this)">全部商品</div>
+  <div class="tab" onclick="switchTab('shampoo',this)">洗髮系列</div>
+  <div class="tab" onclick="switchTab('conditioner',this)">護髮系列</div>
+  <div class="tab" onclick="switchTab('treatment',this)">造型保養</div>
+</div>
+
+<!-- PRODUCTS -->
+<div class="section">
+  <div class="products" id="productGrid"></div>
+</div>
+
+<!-- INFO CARDS -->
+<div class="info-section">
+  <div class="section-title">配送與付款資訊</div>
+  <div class="info-cards">
+    <div class="info-card">
+      <div class="info-label">🚚 運費說明</div>
+      <div class="info-val">宅配到府 $100<br>超商店到店 $60<br>滿 <strong>$1,500</strong> 免運費</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">💳 付款方式</div>
+      <div class="info-val">銀行轉帳<br>貨到付款</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">📦 出貨時間</div>
+      <div class="info-val">付款後<br>1-2 個工作天出貨</div>
+    </div>
+    <div class="info-card">
+      <div class="info-label">🔄 退換貨</div>
+      <div class="info-val">7 天鑑賞期<br>未拆封可申請退換</div>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <strong>優淨 Yujing 美髮品</strong><br>
+  客服信箱：service@yujing.com.tw<br>
+  客服時間：週一至週五 10:00 – 18:00<br>
+  <span style="font-size:11px;margin-top:4px;display:block">© 2025 Yujing 優淨 All Rights Reserved</span>
+</footer>
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closeAll()"></div>
+
+<!-- CART PANEL -->
+<div class="cart-panel" id="cartPanel">
+  <div class="cart-handle"></div>
+  <div class="cart-header">
+    <h2>我的購物車</h2>
+    <button class="close-btn" onclick="closeCart()">✕</button>
+  </div>
+  <div id="cartItems"></div>
+  <div class="free-ship-bar" id="freeShipBar"></div>
+  <div class="cart-summary">
+    <span class="total-text">合計：<span id="cartTotal" style="color:var(--green)">$0</span></span>
+    <button class="checkout-btn" onclick="openCheckout()">前往結帳 →</button>
+  </div>
+</div>
+
+<!-- CHECKOUT MODAL -->
+<div class="modal" id="checkoutModal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <h2>填寫訂單資料</h2>
+    <button class="close-btn" onclick="closeCheckout()">✕</button>
+  </div>
+  <div id="orderSummaryBox" class="order-confirm-box"></div>
+
+  <div class="section-divider">配送方式</div>
+  <div class="radio-group">
+    <label class="radio-label">
+      <input type="radio" name="shipping" value="100" checked onchange="updateShipping(this)">
+      宅配到府（運費 $100）
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="shipping" value="60" onchange="updateShipping(this)">
+      超商店到店（運費 $60）
+    </label>
+  </div>
+
+  <div class="section-divider">付款方式</div>
+  <div class="radio-group">
+    <label class="radio-label">
+      <input type="radio" name="payment" value="transfer" checked>
+      銀行轉帳（下單後匯款至指定帳號）
+    </label>
+    <label class="radio-label">
+      <input type="radio" name="payment" value="cod">
+      貨到付款（商品送達時付款）
+    </label>
+  </div>
+
+  <div class="section-divider">收件資料</div>
+  <div class="form-group"><label>收件人姓名 *</label><input type="text" id="checkName" placeholder="請輸入姓名"></div>
+  <div class="form-group"><label>聯絡電話 *</label><input type="tel" id="checkPhone" placeholder="請輸入手機號碼"></div>
+  <div class="form-group"><label>收件地址 *</label><input type="text" id="checkAddr" placeholder="請輸入完整地址或門市名稱"></div>
+  <div class="form-group"><label>電子信箱</label><input type="email" id="checkEmail" placeholder="訂單確認信件寄送地址"></div>
+  <div class="form-group"><label>折價券碼（選填）</label><input type="text" id="couponCode" placeholder="輸入折價券代碼" oninput="applyCoupon()"></div>
+  <div id="couponMsg" style="font-size:12px;color:var(--green);margin-top:-6px;margin-bottom:8px;display:none">✓ 折價券 $100 已套用</div>
+
+  <div class="free-ship-bar" id="checkoutShipBar"></div>
+  <div style="display:flex;justify-content:space-between;font-size:15px;font-weight:500;margin:12px 0;padding-top:8px;border-top:0.5px solid var(--border)">
+    <span>訂單總計</span>
+    <span style="color:var(--green)" id="checkoutTotal">$0</span>
+  </div>
+  <button class="submit-btn" onclick="submitOrder()">確認下單</button>
+</div>
+
+<!-- MEMBER MODAL -->
+<div class="modal" id="memberModal">
+  <div class="modal-handle"></div>
+  <div class="modal-header">
+    <h2>會員中心</h2>
+    <button class="close-btn" onclick="closeMemberModal()">✕</button>
+  </div>
+
+  <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px">會員登入</div>
+  <div class="form-group"><label>電子信箱</label><input type="email" placeholder="請輸入電子信箱"></div>
+  <div class="form-group"><label>密碼</label><input type="password" placeholder="請輸入密碼"></div>
+  <button class="submit-btn" onclick="fakeLogin()" style="margin-bottom:16px">登 入</button>
+
+  <div class="register-box">
+    <div class="register-box-title">
+      立即免費註冊
+      <span class="coupon-tag">🎫 送 $100 折價券</span>
+    </div>
+    <div class="form-group"><label>姓名</label><input type="text" placeholder="請輸入姓名"></div>
+    <div class="form-group"><label>電子信箱</label><input type="email" placeholder="請輸入電子信箱"></div>
+    <div class="form-group"><label>密碼（8 位以上）</label><input type="password" placeholder="設定密碼"></div>
+    <div class="form-group"><label>確認密碼</label><input type="password" placeholder="再次輸入密碼"></div>
+    <button class="submit-btn" onclick="fakeRegister()">立即註冊，領取 $100 折價券</button>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const products = [
+  { id:1, name:'深層修護洗髮精', desc:'受損髮質專用，角蛋白配方修護毛鱗片', price:480, emoji:'🧴', cat:'shampoo' },
+  { id:2, name:'胺基酸溫和洗髮精', desc:'敏感頭皮適用，無矽靈溫和潔淨', price:520, emoji:'🫧', cat:'shampoo' },
+  { id:3, name:'控油平衡洗髮精', desc:'調節皮脂分泌，清爽不乾澀', price:460, emoji:'💆', cat:'shampoo' },
+  { id:4, name:'水潤護髮乳', desc:'補充水分鎖水，打造柔順絲滑秀髮', price:420, emoji:'🌊', cat:'conditioner' },
+  { id:5, name:'角蛋白護髮膜', desc:'深層補水修護，每週使用一次', price:650, emoji:'🌿', cat:'conditioner' },
+  { id:6, name:'免沖護髮素', desc:'輕盈不油膩，方便日常隨時補充', price:380, emoji:'💧', cat:'conditioner' },
+  { id:7, name:'頭皮精華液', desc:'強健髮根，改善掉髮及稀疏問題', price:980, emoji:'✨', cat:'treatment' },
+  { id:8, name:'造型護髮油', desc:'防毛躁增光澤，自然不黏膩', price:560, emoji:'🌟', cat:'treatment' },
+  { id:9, name:'頭皮去角質磨砂膏', desc:'深層清潔毛孔，重啟健康頭皮環境', price:720, emoji:'🫙', cat:'treatment' },
+  { id:10, name:'髮根噴霧精華', desc:'即時豐盈感，持久蓬鬆造型', price:580, emoji:'💫', cat:'treatment' },
+];
+
+let cart = [];
+let currentTab = 'all';
+let shippingFee = 100;
+let couponApplied = false;
+
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderProducts();
+}
+
+function renderProducts() {
+  const filtered = currentTab === 'all' ? products : products.filter(p => p.cat === currentTab);
+  document.getElementById('productGrid').innerHTML = filtered.map(p => `
+    <div class="product-card">
+      <div class="product-img">${p.emoji}</div>
+      <div class="product-name">${p.name}</div>
+      <div class="product-desc">${p.desc}</div>
+      <div class="product-price">$${p.price}</div>
+      <button class="add-btn" onclick="addToCart(${p.id})">加入購物車</button>
+    </div>
+  `).join('');
+}
+
+function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) existing.qty++;
+  else cart.push({ ...p, qty: 1 });
+  updateBadge();
+  showToast(p.emoji + ' 已加入購物車');
+}
+
+function updateBadge() {
+  const total = cart.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cartBadge').textContent = total;
+}
+
+function getSubtotal() { return cart.reduce((s, i) => s + i.price * i.qty, 0); }
+
+function renderCart() {
+  const sub = getSubtotal();
+  const free = sub >= 1500;
+  const ship = free ? 0 : shippingFee;
+  const total = sub + ship;
+  if (cart.length === 0) {
+    document.getElementById('cartItems').innerHTML = `
+      <div class="empty-cart"><div class="icon">🛒</div>購物車目前是空的<br><span style="font-size:11px;margin-top:4px;display:block">快去挑選喜愛的商品吧！</span></div>`;
+  } else {
+    document.getElementById('cartItems').innerHTML = cart.map(i => `
+      <div class="cart-item">
+        <span class="cart-item-name"><span>${i.emoji}</span><span>${i.name}</span></span>
+        <div class="qty-ctrl">
+          <button class="qty-btn" onclick="changeQty(${i.id},-1)">−</button>
+          <span style="font-size:13px;min-width:16px;text-align:center">${i.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${i.id},1)">+</button>
+          <span style="min-width:52px;text-align:right;font-size:13px">$${i.price * i.qty}</span>
+        </div>
+      </div>
+    `).join('');
+  }
+  const remain = 1500 - sub;
+  document.getElementById('freeShipBar').textContent = free ? '🎉 已達 $1,500 免運門檻！' : `再購 $${remain} 即可免運費`;
+  document.getElementById('cartTotal').textContent = `$${total}${free ? '（免運）' : ''}`;
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(x => x.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) cart = cart.filter(x => x.id !== id);
+  updateBadge();
+  renderCart();
+}
+
+function openCart() {
+  renderCart();
+  document.getElementById('cartPanel').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeCart() {
+  document.getElementById('cartPanel').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function calcCheckoutTotal() {
+  const sub = getSubtotal();
+  const free = sub >= 1500;
+  const ship = free ? 0 : shippingFee;
+  const discount = couponApplied ? 100 : 0;
+  return Math.max(0, sub + ship - discount);
+}
+
+function openCheckout() {
+  if (cart.length === 0) { showToast('購物車是空的！'); return; }
+  closeCart();
+  const sub = getSubtotal();
+  const free = sub >= 1500;
+  const ship = free ? 0 : shippingFee;
+  document.getElementById('orderSummaryBox').innerHTML =
+    cart.map(i => `<span>${i.emoji} ${i.name} × ${i.qty}　$${i.price * i.qty}</span>`).join('<br>') +
+    `<br><span style="border-top:0.5px solid rgba(0,0,0,0.1);display:block;padding-top:6px;margin-top:6px">小計 $${sub}　運費 ${free ? '免費' : '$' + ship}</span>`;
+  document.getElementById('checkoutShipBar').textContent = free ? '🎉 已達免運門檻！' : `運費：$${ship}`;
+  document.getElementById('checkoutTotal').textContent = `$${calcCheckoutTotal()}`;
+  document.getElementById('checkoutModal').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeCheckout() {
+  document.getElementById('checkoutModal').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function updateShipping(el) {
+  shippingFee = parseInt(el.value);
+  const sub = getSubtotal();
+  const free = sub >= 1500;
+  const ship = free ? 0 : shippingFee;
+  document.getElementById('checkoutShipBar').textContent = free ? '🎉 已達免運門檻！' : `運費：$${ship}`;
+  document.getElementById('checkoutTotal').textContent = `$${calcCheckoutTotal()}`;
+  document.getElementById('checkAddr').placeholder = shippingFee === 60 ? '請輸入超商名稱及門市' : '請輸入完整收件地址';
+}
+
+function applyCoupon() {
+  const code = document.getElementById('couponCode').value.trim().toUpperCase();
+  couponApplied = (code === 'NEW100' || code === 'YUJING100');
+  document.getElementById('couponMsg').style.display = couponApplied ? 'block' : 'none';
+  document.getElementById('checkoutTotal').textContent = `$${calcCheckoutTotal()}`;
+}
+
+function submitOrder() {
+  const name = document.getElementById('checkName').value.trim();
+  const phone = document.getElementById('checkPhone').value.trim();
+  const addr = document.getElementById('checkAddr').value.trim();
+  if (!name || !phone || !addr) { showToast('請填寫完整收件資料'); return; }
+  showToast('🎉 訂單已成功送出！感謝您的購買');
+  cart = []; couponApplied = false;
+  updateBadge();
+  closeCheckout();
+}
+
+function openMemberModal() {
+  document.getElementById('memberModal').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
+}
+function closeMemberModal() {
+  document.getElementById('memberModal').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+function fakeLogin() { showToast('登入成功！歡迎回來 👋'); closeMemberModal(); }
+function fakeRegister() {
+  showToast('🎫 註冊成功！折價券代碼 NEW100 已發送至您的信箱');
+  closeMemberModal();
+}
+
+function closeAll() {
+  document.querySelectorAll('.cart-panel, .modal').forEach(el => el.classList.remove('show'));
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function showToast(text) {
+  const el = document.getElementById('toast');
+  el.textContent = text;
+  el.style.display = 'block';
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.style.display = 'none', 2800);
+}
+
+renderProducts();
+</script>
+</body>
+</html>
