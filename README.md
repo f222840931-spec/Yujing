@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>yujing 優淨 - 專業美髮品牌</title>
+    <title>yujing 優淨 - 沙龍級美髮品牌</title>
     <style>
         :root {
             --primary-color: #333;
