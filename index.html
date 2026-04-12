@@ -654,11 +654,35 @@ function applyCoupon() {
   document.getElementById('checkoutTotal').textContent = `$${calcCheckoutTotal()}`;
 }
 
-function submitOrder() {
+async function submitOrder() {
   const name = document.getElementById('checkName').value.trim();
   const phone = document.getElementById('checkPhone').value.trim();
   const addr = document.getElementById('checkAddr').value.trim();
   if (!name || !phone || !addr) { showToast('請填寫完整收件資料'); return; }
+
+  // ── 送單到 Google Sheets ──────────────────────────
+  const GAS_URL = '這裡貼上你的Apps Script網址'; // ← 替換這行
+  const productList = cart.map(i => i.name + ' x' + i.qty).join('、');
+  const total = calcCheckoutTotal();
+  const order = {
+    id: '#' + Date.now(),
+    customer: name,
+    phone: phone,
+    product: productList,
+    amount: total,
+    status: '新訂單',
+    date: new Date().toLocaleDateString('zh-TW')
+  };
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'append', sheet: 'orders', data: order })
+    });
+  } catch(e) { console.log('送單失敗', e); }
+  // ─────────────────────────────────────────────────
+
   showToast('🎉 訂單已成功送出！感謝您的購買');
   cart = []; couponApplied = false;
   updateBadge();
