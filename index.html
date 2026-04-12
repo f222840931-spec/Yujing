@@ -339,7 +339,7 @@
 <div class="coupon-banner">
   <span class="coupon-icon">🎫</span>
   <div class="coupon-text">
-    <strong>首次註冊會員即送 $100 折價券 ｜ 洗髮精任搭兩瓶 $900</strong>
+    <strong>首次註冊會員即送 $100 折價券 ｜ 洗髮精原價$1,000 買一送一</strong>
     堅果油 / 護髮油原價 $1,200，現在優惠價 $780！立即加入會員享更多優惠
   </div>
 </div>
@@ -523,7 +523,7 @@ function renderProducts() {
     const isShampoo = p.cat === 'shampoo';
     const dealBadge = isOil
       ? '<span style="display:inline-block;background:#c53030;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;margin-bottom:5px;">特惠 原$1,200→$780</span>'
-      : (isShampoo ? '<span style="display:inline-block;background:#2a7a6a;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;margin-bottom:5px;">任搭2瓶 $900</span>' : '');
+      : (isShampoo ? '<span style="display:inline-block;background:#2a7a6a;color:#fff;font-size:10px;padding:2px 8px;border-radius:10px;margin-bottom:5px;">原價$1,000 買一送一</span>' : '');
     const origPriceHtml = p.origPrice > p.price
       ? '<span style="text-decoration:line-through;color:#bbb;font-size:12px;margin-right:4px;">$' + p.origPrice + '</span>' : '';
     const imgHtml = p.img
@@ -558,9 +558,9 @@ function updateBadge() {
 function getSubtotal() {
   let total = 0;
   const shampooQty = cart.filter(i => i.cat === 'shampoo').reduce((s,i) => s + i.qty, 0);
-  const bundles = Math.floor(shampooQty / 2);
-  const singles = shampooQty % 2;
-  total += bundles * 900 + singles * 1000;
+  // 買一送一：每2瓶只算1瓶 $1,000，奇數多一瓶照原價
+  const paid = Math.ceil(shampooQty / 2);
+  total += paid * 1000;
   cart.filter(i => i.cat !== 'shampoo').forEach(i => { total += i.price * i.qty; });
   return total;
 }
