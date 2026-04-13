@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>美髮會員系統</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink: #1a1209;
+      --gold: #b8860b;
+      --gold-light: #e8c96a;
+      --cream: #faf6ef;
+      --warm: #f0e8d8;
+      --muted: #7a6a50;
+      --border: #d4c4a0;
+      --white: #ffffff;
+      --danger: #c0392b;
+      --success: #2e7d4f;
+    }
+
+    body {
+      font-family: 'Noto Sans TC', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+
+    /* ── 裝飾背景 ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 10% 20%, rgba(184,134,11,0.08) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 60% at 90% 80%, rgba(184,134,11,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .wrapper {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    /* ── 品牌標題 ── */
+    .brand {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .brand-name {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 2rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      color: var(--ink);
+    }
+    .brand-line {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      justify-content: center;
+      margin-top: 0.5rem;
+    }
+    .brand-line::before, .brand-line::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, transparent, var(--gold), transparent);
+      max-width: 60px;
+    }
+    .brand-sub {
+      font-size: 0.75rem;
+      letter-spacing: 0.25em;
+      color: var(--gold);
+      text-transform: uppercase;
+    }
+
+    /* ── 卡片 ── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 2px;
+      padding: 2.5rem 2rem;
+      box-shadow: 0 2px 24px rgba(26,18,9,0.07);
+    }
+
+    /* ── 分頁切換 ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      padding: 0.75rem 0;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      cursor: pointer;
+      position: relative;
+      transition: color 0.2s;
+    }
+    .tab-btn.active {
+      color: var(--ink);
+      font-weight: 500;
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0; right: 0;
+      height: 2px;
+      background: var(--gold);
+    }
+
+    /* ── 表單 ── */
+    .form-section { display: none; }
+    .form-section.show { display: block; }
+
+    .form-group { margin-bottom: 1.25rem; }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 0.4rem;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="password"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      background: var(--cream);
+      padding: 0.65rem 0.9rem;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.95rem;
+      color: var(--ink);
+      border-radius: 1px;
+      outline: none;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    input:focus {
+      border-color: var(--gold);
+      background: var(--white);
+    }
+
+    /* ── 按鈕 ── */
+    .btn-primary {
+      width: 100%;
+      margin-top: 0.5rem;
+      padding: 0.8rem;
+      background: var(--ink);
+      color: var(--gold-light);
+      border: none;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.9rem;
+      letter-spacing: 0.15em;
+      cursor: pointer;
+      border-radius: 1px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .btn-primary:hover { background: var(--gold); color: var(--ink); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-outline {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 0.6rem 1.2rem;
+      font-family: 'Noto Sans TC', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+      border-radius: 1px;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-outline:hover { border-color: var(--gold); color: var(--ink); }
+
+    /* ── 訊息 ── */
+    .msg {
+      font-size: 0.82rem;
+      padding: 0.6rem 0.8rem;
+      border-radius: 1px;
+      margin-top: 1rem;
+      display: none;
+    }
+    .msg.show { display: block; }
+    .msg.error { background: #fdf0ee; color: var(--danger); border-left: 3px solid var(--danger); }
+    .msg.success { background: #eef7f2; color: var(--success); border-left: 3px solid var(--success); }
+
+    /* ── 登入後的會員頁 ── */
+    #member-page { display: none; }
+    #member-page.show { display: block; }
+    #auth-page { display: block; }
+    #auth-page.hide { display: none; }
+
+    .member-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+    }
+    .member-welcome {
+      font-family: 'Noto Serif TC', serif;
+      font-size: 1.1rem;
+      color: var(--ink);
+    }
+    .member-email {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+      letter-spacing: 0.04em;
+    }
+
+    .member-divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.25rem 0;
+    }
+
+    .member-info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      font-size: 0.88rem;
+    }
+    .member-info-row .info-label { color: var(--muted); letter-spacing: 0.04em; }
+    .member-info-row .info-val { font-weight: 500; }
+
+    /* ── 設定區段提示 ── */
+    .setup-banner {
+      background: #fffbec;
+      border: 1px solid #e8c96a;
+      border-left: 4px solid var(--gold);
+      padding: 1rem 1.1rem;
+      border-radius: 1px;
+      margin-bottom: 1.5rem;
+      font-size: 0.82rem;
+      line-height: 1.6;
+      color: #5a4500;
+    }
+    .setup-banner code {
+      background: rgba(184,134,11,0.12);
+      padding: 0.1em 0.35em;
+      border-radius: 2px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.88em;
+    }
+    .setup-banner strong { font-weight: 600; }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="brand">
+    <div class="brand-name">美髮沙龍</div>
+    <div class="brand-line"><span class="brand-sub">會員中心</span></div>
+  </div>
+
+  <!-- 登入/註冊區塊 -->
+  <div id="auth-page">
+    <div class="card">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('login')">登入</button>
+        <button class="tab-btn" onclick="switchTab('register')">註冊會員</button>
+      </div>
+
+      <!-- 登入 -->
+      <div id="form-login" class="form-section show">
+        <div class="form-group">
+          <label>電子信箱</label>
+          <input type="email" id="login-email" placeholder="your@email.com"/>
+        </div>
+        <div class="form-group">
+          <label>密碼</label>
+          <input type="password" id="login-password" placeholder="請輸入密碼"/>
+        </div>
+        <button class="btn-primary" onclick="doLogin()">登　入</button>
+        <div id="login-msg" class="msg"></div>
+      </div>
+
+      <!-- 註冊 -->
+      <div id="form-register" class="form-section">
+        <div class="form-group">
+          <label>姓名</label>
+          <input type="text" id="reg-name" placeholder="請輸入真實姓名"/>
+        </div>
+        <div class="form-group">
+          <label>電子信箱</label>
+          <input type="email" id="reg-email" placeholder="your@email.com"/>
+        </div>
+        <div class="form-group">
+          <label>密碼（至少 6 位）</label>
+          <input type="password" id="reg-password" placeholder="請設定密碼"/>
+        </div>
+        <div class="form-group">
+          <label>手機號碼</label>
+          <input type="text" id="reg-phone" placeholder="09xx-xxx-xxx（選填）"/>
+        </div>
+        <button class="btn-primary" onclick="doRegister()">立即註冊</button>
+        <div id="register-msg" class="msg"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 登入後的會員頁 -->
+  <div id="member-page">
+    <div class="card">
+      <div class="member-header">
+        <div>
+          <div class="member-welcome">歡迎回來 ✦</div>
+          <div class="member-email" id="display-email"></div>
+        </div>
+        <button class="btn-outline" onclick="doLogout()">登出</button>
+      </div>
+      <hr class="member-divider"/>
+      <div class="member-info-row">
+        <span class="info-label">姓名</span>
+        <span class="info-val" id="display-name">—</span>
+      </div>
+      <div class="member-info-row">
+        <span class="info-label">手機</span>
+        <span class="info-val" id="display-phone">—</span>
+      </div>
+      <div class="member-info-row">
+        <span class="info-label">會員狀態</span>
+        <span class="info-val" style="color: var(--success);">✓ 正式會員</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     Firebase SDK（v10 模組版）
+     ══════════════════════════════════════ -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ══════════════════════════════════════
+  // ▼▼▼ 請把下面的值換成你的 Firebase 設定 ▼▼▼
+  const firebaseConfig = {
+    apiKey:            "AIzaSyB_jPGpG0sNss9nOLjXLyKTm-AtmSSkRqk",
+    authDomain:        "yujing-367f2.firebaseapp.com",
+    projectId:         "yujing-367f2",
+    storageBucket:     "yujing-367f2.firebasestorage.app",
+    messagingSenderId: "1023600618166",
+    appId:             "1:1023600618166:web:72005921fbae7609a3d417"
+  };
+  // ▲▲▲ 設定區結束 ▲▲▲
+  // ══════════════════════════════════════
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  // ── 監聽登入狀態 ──
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // 已登入 → 顯示會員頁
+      document.getElementById('auth-page').classList.add('hide');
+      document.getElementById('member-page').classList.add('show');
+      document.getElementById('display-email').textContent = user.email;
+
+      // 從 Firestore 讀取額外資料
+      const snap = await getDoc(doc(db, "members", user.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        document.getElementById('display-name').textContent  = data.name  || '—';
+        document.getElementById('display-phone').textContent = data.phone || '（未填寫）';
+      }
+    } else {
+      // 未登入 → 顯示登入頁
+      document.getElementById('auth-page').classList.remove('hide');
+      document.getElementById('member-page').classList.remove('show');
+    }
+  });
+
+  // ── 註冊 ──
+  window.doRegister = async () => {
+    const name     = document.getElementById('reg-name').value.trim();
+    const email    = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+    const phone    = document.getElementById('reg-phone').value.trim();
+    const msgEl    = document.getElementById('register-msg');
+
+    if (!name || !email || !password) {
+      showMsg(msgEl, 'error', '請填寫姓名、信箱與密碼');
+      return;
+    }
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      // 把姓名、手機存到 Firestore
+      await setDoc(doc(db, "members", cred.user.uid), {
+        name, email, phone,
+        createdAt: new Date().toISOString()
+      });
+      showMsg(msgEl, 'success', '註冊成功！歡迎加入');
+    } catch (e) {
+      showMsg(msgEl, 'error', translateError(e.code));
+    }
+  };
+
+  // ── 登入 ──
+  window.doLogin = async () => {
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const msgEl    = document.getElementById('login-msg');
+
+    if (!email || !password) {
+      showMsg(msgEl, 'error', '請填寫信箱與密碼');
+      return;
+    }
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) {
+      showMsg(msgEl, 'error', translateError(e.code));
+    }
+  };
+
+  // ── 登出 ──
+  window.doLogout = () => signOut(auth);
+
+  // ── 工具函式 ──
+  function showMsg(el, type, text) {
+    el.className = `msg ${type} show`;
+    el.textContent = text;
+  }
+
+  function translateError(code) {
+    const map = {
+      'auth/email-already-in-use':  '此信箱已被註冊',
+      'auth/invalid-email':         '信箱格式不正確',
+      'auth/weak-password':         '密碼至少需要 6 位',
+      'auth/user-not-found':        '找不到此帳號',
+      'auth/wrong-password':        '密碼錯誤',
+      'auth/invalid-credential':    '信箱或密碼錯誤',
+      'auth/too-many-requests':     '嘗試次數過多，請稍後再試',
+    };
+    return map[code] || `發生錯誤（${code}）`;
+  }
+</script>
+
+<!-- tab 切換（純 JS，不需 Firebase）-->
+<script>
+  function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach((b,i) =>
+      b.classList.toggle('active', (tab==='login' ? i===0 : i===1))
+    );
+    document.getElementById('form-login').classList.toggle('show', tab==='login');
+    document.getElementById('form-register').classList.toggle('show', tab==='register');
+  }
+</script>
+
+</body>
+</html>
