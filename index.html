@@ -5,6 +5,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Yujing 優淨沙龍級髮品</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyB_jPGpG0sNss9nOLjXLyKTm-AtmSSkRqk",
+    authDomain: "yujing-367f2.firebaseapp.com",
+    projectId: "yujing-367f2",
+    storageBucket: "yujing-367f2.firebasestorage.app",
+    messagingSenderId: "1023600618166",
+    appId: "1:1023600618166:web:72005921fbae7609a3d417"
+  });
+  var auth = firebase.auth();
+</script>
 <style>
   :root {
     --green: #2a7a6a;
@@ -661,7 +674,7 @@ async function submitOrder() {
   if (!name || !phone || !addr) { showToast('請填寫完整收件資料'); return; }
 
   // ── 送單到 Google Sheets ──────────────────────────
-  const GAS_URL = '這裡貼上你的Apps Script網址'; // ← 替換這行
+  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxF0CbXKlRfjNDTxticodtUiVPMQX6urJutS4NVBfwjkO7wL_LkzBaiwrte_zt49f5P/exec'; // ← 替換這行
   const productList = cart.map(i => i.name + ' x' + i.qty).join('、');
   const total = calcCheckoutTotal();
   const order = {
@@ -697,9 +710,54 @@ function closeMemberModal() {
   document.getElementById('memberModal').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
 }
-function fakeLogin() { showToast('登入成功！歡迎回來 👋'); closeMemberModal(); }
-function fakeRegister() {
-  showToast('🎫 註冊成功！折價券代碼 NEW100 已發送至您的信箱');
+async function fakeLogin() {
+  const inputs = document.querySelectorAll('#memberModal input');
+  const email = inputs[0].value.trim();
+  const password = inputs[1].value.trim();
+  if (!email || !password) { showToast('請填寫信箱和密碼'); return; }
+  try {
+    await auth.signInWithEmailAndPassword(email, password);
+    showToast('登入成功！歡迎回來 👋');
+    closeMemberModal();
+    document.querySelector('.member-btn').textContent = '已登入';
+  } catch(e) {
+    showToast('登入失敗：帳號或密碼錯誤');
+  }
+}
+
+auth.onAuthStateChanged(user => {
+  const btn = document.querySelector('.member-btn');
+  if (btn) btn.textContent = user ? '已登入' : '會員登入';
+});
+async function fakeRegister() {
+  const inputs = document.querySelectorAll('.register-box input');
+  const name = inputs[0].value.trim();
+  const email = inputs[1].value.trim();
+  const password = inputs[2].value.trim();
+  const confirm = inputs[3].value.trim();
+  if (!name || !email || !password) { showToast('請填寫完整資料'); return; }
+  if (password !== confirm) { showToast('密碼不一致！'); return; }
+  if (password.length < 8) { showToast('密碼需 8 位以上'); return; }
+
+  const member = {
+    id: 'M' + Date.now(),
+    name: name,
+    email: email,
+    phone: '',
+    coupon: 100,
+    date: new Date().toLocaleDateString('zh-TW')
+  };
+
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'append', sheet: 'members', data: member })
+    });
+  } catch(e) { console.log('註冊失敗', e); }
+
+  showToast('🎫 註冊成功！已獲得 $100 折價券');
   closeMemberModal();
 }
 
