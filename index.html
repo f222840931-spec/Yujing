@@ -534,6 +534,7 @@ let cart = [];
 let currentTab = 'all';
 let shippingFee = 100;
 let couponApplied = false;
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxF0CbXKlRfjNDTxticodtUiVPMQX6urJutS4NVBfwjkO7wL_LkzBaiwrte_zt49f5P/exec';
 
 function switchTab(tab, el) {
   currentTab = tab;
@@ -695,7 +696,6 @@ async function submitOrder() {
   if (payment === 'transfer' && transferCode.length !== 5) { showToast('請填寫轉帳後五碼'); return; }
 
   // ── 送單到 Google Sheets ──────────────────────────
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbxF0CbXKlRfjNDTxticodtUiVPMQX6urJutS4NVBfwjkO7wL_LkzBaiwrte_zt49f5P/exec';
   const productList = cart.map(i => i.name + ' x' + i.qty).join('、');
   const total = calcCheckoutTotal();
   const order = {
@@ -760,6 +760,21 @@ async function fakeRegister() {
   if (password !== confirm) { showToast('密碼不一致！'); return; }
   if (password.length < 8) { showToast('密碼需 8 位以上'); return; }
 
+  // ── 在 Firebase Auth 建立帳號 ──────────────────────
+  try {
+    await auth.createUserWithEmailAndPassword(email, password);
+  } catch(e) {
+    if (e.code === 'auth/email-already-in-use') {
+      showToast('此信箱已註冊，請直接登入');
+    } else if (e.code === 'auth/invalid-email') {
+      showToast('信箱格式不正確');
+    } else {
+      showToast('註冊失敗：' + e.message);
+    }
+    return;
+  }
+  // ──────────────────────────────────────────────────
+
   const member = {
     id: 'M' + Date.now(),
     name: name,
@@ -776,7 +791,7 @@ async function fakeRegister() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'append', sheet: 'members', data: member })
     });
-  } catch(e) { console.log('註冊失敗', e); }
+  } catch(e) { console.log('Google Sheets 寫入失敗', e); }
 
   showToast('🎫 註冊成功！已獲得 $100 折價券');
   closeMemberModal();
