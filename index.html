@@ -763,10 +763,46 @@ async function fakeLogin() {
     showToast('登入失敗：帳號或密碼錯誤');
   }
 }
+async function openMemberPanel() {
+  const user = auth.currentUser;
+  document.getElementById('memberEmail').textContent = user.email;
+  document.getElementById('memberPanel').classList.add('show');
+  document.getElementById('overlay').classList.add('show');
 
+  const snap = await db.collection('orders')
+    .where('memberEmail', '==', user.email)
+    .orderBy('createdAt', 'desc')
+    .get();
+  const list = document.getElementById('orderList');
+  if (snap.empty) {
+    list.innerHTML = '<p style="color:#999;font-size:13px">尚無訂單紀錄</p>';
+  } else {
+    list.innerHTML = snap.docs.map(doc => {
+      const d = doc.data();
+      return `<div style="border:0.5px solid #eee;border-radius:8px;padding:10px;margin-bottom:8px;font-size:13px">
+        <div><strong>${d.orderId}</strong>　${d.total ? '$' + d.total : ''}</div>
+        <div style="color:#999;margin-top:4px">${d.items?.map(i=>i.name+'×'+i.qty).join('、') || ''}</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function closeMemberPanel() {
+  document.getElementById('memberPanel').classList.remove('show');
+  document.getElementById('overlay').classList.remove('show');
+}
+
+function logout() {
+  auth.signOut();
+  closeMemberPanel();
+  showToast('已登出');
+}
 auth.onAuthStateChanged(user => {
   const btn = document.querySelector('.member-btn');
-  if (btn) btn.textContent = user ? '已登入' : '會員登入';
+  if (btn) {
+  btn.textContent = user ? '已登入' : '會員登入';
+  btn.onclick = user ? openMemberPanel : openMemberModal;
+}
 });
 async function fakeRegister() {
   const inputs = document.querySelectorAll('.register-box input');
@@ -807,6 +843,19 @@ async function fakeRegister() {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
+      <div class="modal" id="memberPanel" style="display:none">
+  <div class="modal-box">
+    <div class="cart-handle"></div>
+    <div class="cart-header">
+      <h2>我的帳號</h2>
+      <button class="close-btn" onclick="closeMemberPanel()">✕</button>
+    </div>
+    <p style="font-size:13px;color:#666;margin-bottom:16px" id="memberEmail"></p>
+    <div class="section-title">我的訂單</div>
+    <div id="orderList" style="margin-top:12px"></div>
+    <button class="add-btn" style="margin-top:16px;background:#e55" onclick="logout()">登出</button>
+  </div>
+</div>
       body: JSON.stringify({ action: 'append', sheet: 'members', data: member })
     });
   } catch(e) { console.log('Google Sheets 寫入失敗', e); }
