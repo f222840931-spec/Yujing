@@ -354,7 +354,7 @@
 <div class="coupon-banner">
   <span class="coupon-icon">🎫</span>
   <div class="coupon-text">
-    <strong>首次註冊會員消費即折抵 $100 ｜ 洗髮精原價$1,000 買一送一</strong>
+    <strong>首次註冊會員即送 $100 折價券 ｜ 洗髮精原價$1,000 買一送一</strong>
     堅果油 / 護髮油原價 $1,200，現在優惠價 $780！立即加入會員享更多優惠
   </div>
 </div>
@@ -654,7 +654,7 @@ async function openCheckout() {
   const free = sub >= 1500;
   const ship = free ? 0 : shippingFee;
 
-  // 自動檢查首次折扣
+  // 自動檢查首次折扣 + 填入會員資料
   const user = auth.currentUser;
   couponApplied = false;
   if (user) {
@@ -670,6 +670,17 @@ async function openCheckout() {
         showToast('🎉 首次註冊折扣 $100 已自動套用！');
       }
     } catch(e) { console.log('折扣驗證失敗', e); }
+
+    // 從 Google Sheets 取得會員資料並自動填入
+    try {
+      const mRes = await fetch(GAS_URL + '?sheet=members');
+      const members = await mRes.json();
+      const member = members.find(m => m.EMAIL === user.email);
+      if (member) {
+        document.getElementById('checkName').value = member.NAME || '';
+        document.getElementById('checkPhone').value = member.PHONE || '';
+      }
+    } catch(e) { console.log('會員資料讀取失敗', e); }
   }
 
   document.getElementById('orderSummaryBox').innerHTML =
