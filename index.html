@@ -812,7 +812,6 @@ async function openMemberPanel() {
 
   const snap = await db.collection('orders')
     .where('memberEmail', '==', user.email)
-    .orderBy('createdAt', 'desc')
     .get();
   const list = document.getElementById('orderList');
   if (snap.empty) {
