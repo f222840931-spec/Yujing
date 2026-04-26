@@ -536,7 +536,7 @@ let cart = [];
 let currentTab = 'all';
 let shippingFee = 100;
 let couponApplied = false;
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxt1t4b0rDz_yJvDg1o8ld4SV5yWaOafKP8rzS7aS_WxgduQ8GjyEF4mb2YE8o5KvT1/exec';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxIE0Q8RK9ccnZj-2c-Hch5UEu8m2etB_yORiSisfRyebuDWxITb0ga9t2JQnOrPA8f/exec';
 
 function switchTab(tab, el) {
   currentTab = tab;
@@ -647,15 +647,35 @@ function calcCheckoutTotal() {
   return Math.max(0, sub + ship - discount);
 }
 
-function openCheckout() {
+async function openCheckout() {
   if (cart.length === 0) { showToast('購物車是空的！'); return; }
   closeCart();
   const sub = getSubtotal();
   const free = sub >= 1500;
   const ship = free ? 0 : shippingFee;
+
+  // 自動檢查首次折扣
+  const user = auth.currentUser;
+  couponApplied = false;
+  if (user) {
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'checkCoupon', data: { email: user.email } })
+      });
+      const result = await res.json();
+      if (result.valid) {
+        couponApplied = true;
+        showToast('🎉 首次註冊折扣 $100 已自動套用！');
+      }
+    } catch(e) { console.log('折扣驗證失敗', e); }
+  }
+
   document.getElementById('orderSummaryBox').innerHTML =
     cart.map(i => `<span>${i.emoji} ${i.name} × ${i.qty}　$${i.price * i.qty}</span>`).join('<br>') +
-    `<br><span style="border-top:0.5px solid rgba(0,0,0,0.1);display:block;padding-top:6px;margin-top:6px">小計 $${sub}　運費 ${free ? '免費' : '$' + ship}</span>`;
+    `<br><span style="border-top:0.5px solid rgba(0,0,0,0.1);display:block;padding-top:6px;margin-top:6px">小計 $${sub}　運費 ${free ? '免費' : '$' + ship}</span>` +
+    (couponApplied ? '<br><span style="color:#2a7a6a">首次註冊折扣 -$100</span>' : '');
   document.getElementById('checkoutShipBar').textContent = free ? '🎉 已達免運門檻！' : `運費：$${ship}`;
   document.getElementById('checkoutTotal').textContent = `$${calcCheckoutTotal()}`;
   document.getElementById('checkoutModal').classList.add('show');
@@ -718,6 +738,16 @@ async function submitOrder() {
     });
   } catch(e) { console.log('送單失敗', e); }
   // ─────────────────────────────────────────────────
+  // 標記首次折扣已使用
+  if (couponApplied && user) {
+    try {
+      await fetch(GAS_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'useCoupon', data: { email: user.email } })
+      });
+    } catch(e) { console.log('標記折扣失敗', e); }
+  }
   // ── 存入 Firestore ──
   const user = auth.currentUser;
   try {
