@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>我的消費紀錄 — Yujing 優淨沙龍級髮品</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #1a1714; --ink-light: #6b6560; --ink-faint: #b0aba5;
+    --cream: #faf7f2; --surface: #fff; --border: #e8e3dc; --border-dark: #c9c2b8;
+    --gold: #c49a5a; --gold-light: #f5ead8;
+    --green: #4a7c6a; --green-light: #e6f0ec;
+    --amber: #b06d2a; --amber-light: #fdf0e2;
+    --gray-light: #f2eeea; --r: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); min-height: 100vh; }
+
+  /* Header */
+  header {
+    background: var(--ink); color: #fff;
+    padding: 0 2rem; height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Noto Serif TC', serif; font-size: 18px; letter-spacing: 0.08em; color: var(--gold); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .member-name { font-size: 13px; color: rgba(255,255,255,0.6); }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--gold); color: var(--ink);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 500;
+  }
+  .logout-btn {
+    font-size: 12px; color: rgba(255,255,255,0.45);
+    background: none; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: color 0.15s;
+  }
+  .logout-btn:hover { color: rgba(255,255,255,0.9); }
+
+  /* Container */
+  .container { max-width: 860px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .page-title { font-family: 'Noto Serif TC', serif; font-size: 26px; font-weight: 600; margin-bottom: 0.3rem; }
+  .page-sub { font-size: 13px; color: var(--ink-light); margin-bottom: 2rem; }
+
+  /* Stats */
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 2rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r); padding: 1rem 1.2rem; }
+  .stat-label { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; }
+  .stat-value { font-size: 22px; font-weight: 500; }
+  .stat-value.gold { color: var(--gold); }
+
+  /* Search + Filter */
+  .search-input {
+    width: 100%; padding: 10px 16px;
+    border: 1px solid var(--border); border-radius: var(--r);
+    background: var(--surface); font-size: 14px;
+    font-family: 'DM Sans', sans-serif; color: var(--ink);
+    outline: none; margin-bottom: 1rem; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--gold); }
+  .search-input::placeholder { color: var(--ink-faint); }
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1.25rem; }
+  .filter-btn {
+    padding: 6px 16px; border-radius: 20px;
+    border: 1px solid var(--border-dark);
+    background: transparent; color: var(--ink-light);
+    font-size: 13px; font-family: 'DM Sans', sans-serif; cursor: pointer;
+    transition: all 0.18s;
+  }
+  .filter-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .filter-btn.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+
+  /* Order card */
+  .order-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--r); margin-bottom: 12px; overflow: hidden;
+    transition: box-shadow 0.2s, border-color 0.2s;
+    animation: fadeUp 0.3s ease both;
+  }
+  @keyframes fadeUp { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+  .order-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); border-color: var(--border-dark); }
+  .order-header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 1rem 1.25rem 0.75rem; flex-wrap: wrap; gap: 8px;
+  }
+  .order-id { font-size: 13px; font-weight: 500; letter-spacing: 0.03em; }
+  .order-date { font-size: 12px; color: var(--ink-faint); }
+
+  /* Badge */
+  .badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+  .badge::before { content:''; width:6px; height:6px; border-radius:50%; display:inline-block; }
+  .badge-pending    { background: var(--gray-light); color: var(--ink-light); }
+  .badge-pending::before { background: var(--ink-faint); }
+  .badge-processing { background: var(--amber-light); color: var(--amber); }
+  .badge-processing::before { background: var(--amber); }
+  .badge-shipped    { background: var(--gold-light); color: #8a6230; }
+  .badge-shipped::before { background: var(--gold); }
+  .badge-delivered  { background: var(--green-light); color: var(--green); }
+  .badge-delivered::before { background: var(--green); }
+
+  /* Items */
+  .order-items { padding: 0 1.25rem 0.75rem; border-bottom: 1px solid var(--border); }
+  .order-item { display: flex; justify-content: space-between; font-size: 13.5px; padding: 3px 0; }
+  .item-name { color: var(--ink); }
+  .item-right { color: var(--ink-faint); }
+
+  /* Footer */
+  .order-footer { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1.25rem; }
+  .order-total { font-weight: 500; font-size: 15px; }
+  .order-total span { color: var(--gold); }
+  .expand-btn {
+    font-size: 12.5px; color: var(--ink-faint); background: none; border: none;
+    cursor: pointer; font-family: 'DM Sans', sans-serif; display: flex; align-items: center; gap: 4px;
+    transition: color 0.15s;
+  }
+  .expand-btn:hover { color: var(--gold); }
+  .expand-icon { transition: transform 0.25s; display: inline-block; }
+  .expand-icon.open { transform: rotate(180deg); }
+
+  /* Timeline */
+  .timeline-wrap {
+    background: var(--cream); border-top: 1px solid var(--border);
+    overflow: hidden; max-height: 0;
+    transition: max-height 0.35s ease, padding 0.3s;
+    padding: 0 1.5rem;
+  }
+  .timeline-wrap.open { max-height: 220px; padding: 1.25rem 1.5rem; }
+  .timeline { display: flex; justify-content: space-between; position: relative; margin-bottom: 0.5rem; }
+  .timeline::before {
+    content:''; position:absolute; top:11px; left:11px; right:11px;
+    height:1px; background: var(--border-dark);
+  }
+  .tl-step { flex:1; text-align:center; position:relative; z-index:1; }
+  .tl-dot {
+    width:22px; height:22px; border-radius:50%;
+    border:2px solid var(--border-dark); background:var(--cream);
+    margin: 0 auto 8px; display:flex; align-items:center; justify-content:center;
+    font-size:10px; color:transparent; transition:all 0.2s;
+  }
+  .tl-dot.done  { background:var(--green); border-color:var(--green); color:#fff; }
+  .tl-dot.done::after  { content:'✓'; font-size:11px; }
+  .tl-dot.active { background:var(--gold); border-color:var(--gold); color:#fff; }
+  .tl-dot.active::after { content:'●'; font-size:8px; }
+  .tl-label { font-size:11px; color:var(--ink-faint); }
+  .tl-label.done   { color:var(--green); }
+  .tl-label.active { color:var(--amber); font-weight:500; }
+  .tl-time { font-size:10px; color:var(--ink-faint); margin-top:2px; }
+  .tracking-row {
+    display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    font-size:12px; color:var(--ink-light);
+    margin-top:10px; padding-top:10px; border-top:1px dashed var(--border);
+  }
+  .tracking-row a { color:var(--gold); text-decoration:none; font-weight:500; }
+  .tracking-row a:hover { text-decoration:underline; }
+
+  /* States */
+  .skeleton { background: linear-gradient(90deg, #f0ece6 25%, #faf7f2 50%, #f0ece6 75%); background-size: 200%; animation: shimmer 1.4s infinite; border-radius: var(--r); }
+  @keyframes shimmer { from {background-position:200%;} to {background-position:-200%;} }
+  .skeleton-card { height: 110px; margin-bottom: 12px; }
+  .empty { text-align:center; padding:4rem 2rem; color:var(--ink-faint); }
+  .empty-icon { font-size:36px; margin-bottom:1rem; opacity:0.35; }
+  .empty-text { font-size:15px; }
+
+  @media (max-width:600px) {
+    .container { padding:1.25rem 1rem 3rem; }
+    .stats { grid-template-columns:1fr 1fr; }
+    header { padding:0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Yujing 優淨</div>
+  <div class="header-right">
+    <span class="member-name" id="member-name"></span>
+    <div class="avatar" id="avatar-initials">?</div>
+    <button class="logout-btn" onclick="logout()">登出</button>
+  </div>
+</header>
+
+<div class="container">
+  <div class="page-title">消費紀錄</div>
+  <div class="page-sub" id="page-sub">載入中…</div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">累計消費</div><div class="stat-value gold" id="s-total">—</div></div>
+    <div class="stat"><div class="stat-label">訂單總數</div><div class="stat-value" id="s-count">—</div></div>
+    <div class="stat"><div class="stat-label">進行中</div><div class="stat-value" id="s-active">—</div></div>
+    <div class="stat"><div class="stat-label">已送達</div><div class="stat-value" id="s-done">—</div></div>
+  </div>
+
+  <input class="search-input" type="text" id="search" placeholder="搜尋訂單編號或商品名稱…" oninput="renderFiltered()">
+
+  <div class="filters">
+    <button class="filter-btn active" onclick="setFilter('all',this)">全部</button>
+    <button class="filter-btn" onclick="setFilter('pending',this)">待處理</button>
+    <button class="filter-btn" onclick="setFilter('processing',this)">備貨中</button>
+    <button class="filter-btn" onclick="setFilter('shipped',this)">已出貨</button>
+    <button class="filter-btn" onclick="setFilter('delivered',this)">已送達</button>
+  </div>
+
+  <div id="order-list">
+    <div class="skeleton skeleton-card"></div>
+    <div class="skeleton skeleton-card" style="animation-delay:.1s"></div>
+    <div class="skeleton skeleton-card" style="animation-delay:.2s"></div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp }   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getFirestore, collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey:            "AIzaSyB_jPGpG0sNss9nOLjXLyKTm-AtmSSkRqk",
+    authDomain:        "yujing-367f2.firebaseapp.com",
+    projectId:         "yujing-367f2",
+    storageBucket:     "yujing-367f2.firebasestorage.app",
+    messagingSenderId: "1023600618166",
+    appId:             "1:1023600618166:web:72005921fbae7609a3d417"
+  };
+
+  const app  = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db   = getFirestore(app);
+
+  const STATUS_LABEL = { pending:'待處理', processing:'備貨中', shipped:'已出貨', delivered:'已送達' };
+  const STEP_NAMES   = ['訂單確認', '備貨中', '已出貨', '已送達'];
+  const STATUS_STEP  = { pending:0, processing:1, shipped:2, delivered:3 };
+
+  let allOrders = [];
+  let currentFilter = 'all';
+  let openId = null;
+
+  // ── Auth guard ──────────────────────────────
+  onAuthStateChanged(auth, user => {
+    if (!user) { window.location.href = "index.html"; return; }
+
+    // Show member info
+    const name = user.displayName || user.email.split('@')[0];
+    document.getElementById('member-name').textContent = name;
+    document.getElementById('avatar-initials').textContent = name.charAt(0).toUpperCase();
+    document.getElementById('page-sub').textContent = `${user.email} 的訂單紀錄`;
+
+    // ── Realtime listener ───────────────────────
+    const q = query(
+      collection(db, "orders"),
+      where("memberEmail", "==", user.email),
+      orderBy("createdAt", "desc")
+    );
+
+    onSnapshot(q, snapshot => {
+      allOrders = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      updateStats();
+      renderFiltered();
+    }, err => {
+      console.error(err);
+      document.getElementById('order-list').innerHTML =
+        `<div class="empty"><div class="empty-text">讀取訂單失敗，請重新整理頁面</div></div>`;
+    });
+  });
+
+  // ── Stats ───────────────────────────────────
+  function updateStats() {
+    const total = allOrders.reduce((s, o) => s + (o.total || 0), 0);
+    document.getElementById('s-total').textContent  = 'NT$' + total.toLocaleString();
+    document.getElementById('s-count').textContent  = allOrders.length;
+    document.getElementById('s-active').textContent = allOrders.filter(o => o.status !== 'delivered').length;
+    document.getElementById('s-done').textContent   = allOrders.filter(o => o.status === 'delivered').length;
+  }
+
+  // ── Filter + Render ─────────────────────────
+  window.setFilter = (f, btn) => {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderFiltered();
+  };
+
+  window.renderFiltered = () => {
+    const q = document.getElementById('search').value.trim().toLowerCase();
+    const list = allOrders.filter(o => {
+      if (currentFilter !== 'all' && o.status !== currentFilter) return false;
+      if (q) {
+        const inId    = (o.orderId || o.id).toLowerCase().includes(q);
+        const inItems = (o.items || []).some(i => i.name.toLowerCase().includes(q));
+        if (!inId && !inItems) return false;
+      }
+      return true;
+    });
+    renderList(list);
+  };
+
+  function renderList(list) {
+    const el = document.getElementById('order-list');
+    if (!list.length) {
+      el.innerHTML = `<div class="empty"><div class="empty-icon">🛍</div><div class="empty-text">找不到符合條件的訂單</div></div>`;
+      return;
+    }
+
+    el.innerHTML = list.map((o, idx) => {
+      const orderId  = o.orderId || o.id;
+      const total    = o.total || (o.items || []).reduce((s,i) => s + i.price * i.qty, 0);
+      const stepIdx  = STATUS_STEP[o.status] ?? 0;
+      const isOpen   = openId === o.id;
+
+      const dateStr = o.createdAt?.toDate
+        ? o.createdAt.toDate().toLocaleDateString('zh-TW')
+        : (o.createdAt || '—');
+
+      // Items
+      const itemsHtml = (o.items || []).map(i =>
+        `<div class="order-item">
+          <span class="item-name">${i.name}</span>
+          <span class="item-right">x${i.qty}　NT$${(i.price * i.qty).toLocaleString()}</span>
+         </div>`
+      ).join('');
+
+      // Timeline steps
+      const stepsHtml = STEP_NAMES.map((label, i) => {
+        const done   = i < stepIdx;
+        const active = i === stepIdx;
+        const cls    = done ? 'done' : (active ? 'active' : '');
+        const time   = (o.timeline && o.timeline[i]) ? o.timeline[i] : '';
+        return `<div class="tl-step">
+          <div class="tl-dot ${cls}"></div>
+          <div class="tl-label ${cls}">${label}</div>
+          <div class="tl-time">${time}</div>
+        </div>`;
+      }).join('');
+
+      // Tracking
+      const trackHtml = o.tracking
+        ? `<div class="tracking-row">
+            物流：${o.carrier || ''}　<strong>${o.tracking}</strong>
+            ${o.trackUrl ? `　<a href="${o.trackUrl}" target="_blank">即時追蹤 →</a>` : ''}
+           </div>`
+        : '';
+
+      return `<div class="order-card" style="animation-delay:${idx*0.05}s">
+        <div class="order-header">
+          <div>
+            <div class="order-id">${orderId}</div>
+            <div class="order-date">${dateStr}</div>
+          </div>
+          <span class="badge badge-${o.status}">${STATUS_LABEL[o.status] || o.status}</span>
+        </div>
+        <div class="order-items">${itemsHtml}</div>
+        <div class="order-footer">
+          <div class="order-total">合計 <span>NT$ ${total.toLocaleString()}</span></div>
+          <button class="expand-btn" onclick="toggleTimeline('${o.id}')">
+            查看出貨進度
+            <span class="expand-icon ${isOpen ? 'open' : ''}" data-id="${o.id}">▾</span>
+          </button>
+        </div>
+        <div class="timeline-wrap ${isOpen ? 'open' : ''}" data-id="${o.id}">
+          <div class="timeline">${stepsHtml}</div>
+          ${trackHtml}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  window.toggleTimeline = id => {
+    openId = openId === id ? null : id;
+    document.querySelectorAll('.timeline-wrap').forEach(el => el.classList.remove('open'));
+    document.querySelectorAll('.expand-icon').forEach(el => el.classList.remove('open'));
+    if (openId) {
+      document.querySelector(`.timeline-wrap[data-id="${openId}"]`)?.classList.add('open');
+      document.querySelector(`.expand-icon[data-id="${openId}"]`)?.classList.add('open');
+    }
+  };
+
+  window.logout = async () => {
+    await signOut(auth);
+    window.location.href = "index.html";
+  };
+</script>
+</body>
+</html>
