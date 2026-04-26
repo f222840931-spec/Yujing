@@ -847,6 +847,16 @@ async function fakeRegister() {
     });
   } catch(e) { console.log('Google Sheets 寫入失敗', e); }
 
+  // 寄歡迎信
+  try {
+    await fetch(GAS_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'sendWelcome', data: { email: email, name: name } })
+    });
+  } catch(e) { console.log('寄信失敗', e); }
+
   showToast('🎫 註冊成功！已獲得 $100 折價券');
   closeMemberModal();
 }
