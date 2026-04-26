@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <script>
   firebase.initializeApp({
     apiKey: "AIzaSyB_jPGpG0sNss9nOLjXLyKTm-AtmSSkRqk",
@@ -17,6 +18,7 @@
     appId: "1:1023600618166:web:72005921fbae7609a3d417"
   });
   var auth = firebase.auth();
+  var db = firebase.firestore();
 </script>
 <style>
   :root {
@@ -716,6 +718,22 @@ async function submitOrder() {
     });
   } catch(e) { console.log('送單失敗', e); }
   // ─────────────────────────────────────────────────
+  // ── 存入 Firestore ──
+  const user = auth.currentUser;
+  try {
+    await db.collection("orders").add({
+      orderId:     order.id,
+      memberEmail: user ? user.email : '',
+      status:      'pending',
+      items:       cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+      total:       total,
+      tracking:    '',
+      carrier:     '',
+      timeline:    [new Date().toLocaleString('zh-TW'), '', '', ''],
+      createdAt:   firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch(e) { console.log('Firestore 寫入失敗', e); }
+  // ───────────────────
 
   showToast('🎉 訂單已成功送出！感謝您的購買');
   cart = []; couponApplied = false;
