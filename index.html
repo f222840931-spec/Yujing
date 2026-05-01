@@ -760,11 +760,11 @@ async function submitOrder() {
     } catch(e) { console.log('標記折扣失敗', e); }
   }
   // ── 存入 Firestore ──
-  const user = auth.currentUser;
+  const currentUser = auth.currentUser;
   try {
     await db.collection("orders").add({
       orderId:     order.id,
-      memberEmail: user ? user.email : '',
+      memberEmail: currentUser ? currentUser.email : '',
       status:      'pending',
       items:       cart.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
       total:       total,
@@ -804,46 +804,58 @@ async function fakeLogin() {
     showToast('登入失敗：帳號或密碼錯誤');
   }
 }
-async function openMemberPanel() {
+var unsubscribeOrders = null;
+
+function openMemberPanel() {
   const user = auth.currentUser;
   document.getElementById('memberEmail').textContent = user.email;
   document.getElementById('memberPanel').classList.add('show');
   document.getElementById('overlay').classList.add('show');
 
-  const snap = await db.collection('orders')
-    .where('memberEmail', '==', user.email)
-    .get();
   const list = document.getElementById('orderList');
-  if (snap.empty) {
-    list.innerHTML = '<p style="color:#999;font-size:13px">尚無訂單紀錄</p>';
-  } else {
-    list.innerHTML = snap.docs.map(doc => {
-      const d = doc.data();
-      const statusMap = {
-        'pending':   { text: '待處理', color: '#f0a500' },
-        'confirmed': { text: '已確認', color: '#2a7a6a' },
-        'shipping':  { text: '運送中', color: '#1a6abf' },
-        'delivered': { text: '已送達', color: '#4caf50' },
-        'cancelled': { text: '已取消', color: '#e55' },
-      };
-      const s = statusMap[d.status] || { text: d.status || '處理中', color: '#999' };
-      return `<div style="border:0.5px solid #eee;border-radius:8px;padding:12px;margin-bottom:10px;font-size:13px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <strong>${d.orderId}</strong>
-          <span style="background:${s.color};color:#fff;font-size:11px;padding:2px 10px;border-radius:20px">${s.text}</span>
-        </div>
-        <div style="color:#999;margin-bottom:4px">${d.items?.map(i=>i.name+'×'+i.qty).join('、') || ''}</div>
-        <div style="display:flex;justify-content:space-between;margin-top:6px">
-          <span style="color:#666">總金額：<strong style="color:#2a7a6a">$${d.total || ''}</strong></span>
-          ${d.tracking ? `<span style="color:#666">追蹤號：${d.tracking}</span>` : ''}
-        </div>
-        ${d.createdAt ? `<div style="color:#bbb;font-size:11px;margin-top:4px">${new Date(d.createdAt.seconds*1000).toLocaleDateString('zh-TW')}</div>` : ''}
-      </div>`;
-    }).join('');
-  }
+  list.innerHTML = '<p style="color:#999;font-size:13px">載入中…</p>';
+
+  // 即時監聽：後台更新狀態後，會員端自動同步
+  unsubscribeOrders = db.collection('orders')
+    .where('memberEmail', '==', user.email)
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      if (snap.empty) {
+        list.innerHTML = '<p style="color:#999;font-size:13px">尚無訂單紀錄</p>';
+      } else {
+        const statusMap = {
+          'pending':   { text: '待處理', color: '#f0a500' },
+          'confirmed': { text: '已確認', color: '#2a7a6a' },
+          'shipping':  { text: '運送中', color: '#1a6abf' },
+          'delivered': { text: '已送達', color: '#4caf50' },
+          'cancelled': { text: '已取消', color: '#e55' },
+        };
+        list.innerHTML = snap.docs.map(doc => {
+          const d = doc.data();
+          const s = statusMap[d.status] || { text: d.status || '處理中', color: '#999' };
+          return `<div style="border:0.5px solid #eee;border-radius:8px;padding:12px;margin-bottom:10px;font-size:13px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+              <strong>${d.orderId}</strong>
+              <span style="background:${s.color};color:#fff;font-size:11px;padding:2px 10px;border-radius:20px">${s.text}</span>
+            </div>
+            <div style="color:#999;margin-bottom:4px">${d.items?.map(i=>i.name+'×'+i.qty).join('、') || ''}</div>
+            <div style="display:flex;justify-content:space-between;margin-top:6px">
+              <span style="color:#666">總金額：<strong style="color:#2a7a6a">$${d.total || ''}</strong></span>
+              ${d.tracking ? `<span style="color:#666">追蹤號：${d.tracking}</span>` : ''}
+            </div>
+            ${d.createdAt ? `<div style="color:#bbb;font-size:11px;margin-top:4px">${new Date(d.createdAt.seconds*1000).toLocaleDateString('zh-TW')}</div>` : ''}
+          </div>`;
+        }).join('');
+      }
+    }, err => {
+      console.error('訂單監聽失敗', err);
+      list.innerHTML = '<p style="color:#e55;font-size:13px">載入失敗，請重試</p>';
+    });
 }
 
 function closeMemberPanel() {
+  // 關閉面板時停止監聽，避免資源浪費
+  if (unsubscribeOrders) { unsubscribeOrders(); unsubscribeOrders = null; }
   document.getElementById('memberPanel').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
 }
