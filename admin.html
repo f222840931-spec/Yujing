@@ -551,50 +551,61 @@ function saveLocalData() {
 // ══════════════════════════════
 function getGasUrl() { return getCfg().gasUrl || ''; }
 
-async function sheetFetch(tabName) {
+// GET：用 JSONP 避免 CORS 問題
+function sheetFetch(tabName) {
   const url = getGasUrl();
-  if (!url) return null;
-  try {
-    setSyncLabel('同步中…');
-    const res = await fetch(`${url}?sheet=${tabName}`, { mode: 'cors' });
-    const data = await res.json();
-    setSyncLabel('已同步');
-    return data;
-  } catch {
-    setSyncLabel('離線模式');
-    return null;
-  }
+  if (!url) return Promise.resolve(null);
+  setSyncLabel('同步中…');
+  return new Promise((resolve) => {
+    const cbName = '_gs_cb_' + Date.now();
+    const script = document.createElement('script');
+    let done = false;
+    window[cbName] = (data) => {
+      done = true;
+      delete window[cbName];
+      script.remove();
+      setSyncLabel('已同步');
+      resolve(data);
+    };
+    script.src = `${url}?sheet=${tabName}&callback=${cbName}`;
+    script.onerror = () => {
+      if (!done) { delete window[cbName]; setSyncLabel('離線模式'); resolve(null); }
+    };
+    setTimeout(() => {
+      if (!done) { delete window[cbName]; script.remove(); setSyncLabel('離線模式'); resolve(null); }
+    }, 10000);
+    document.head.appendChild(script);
+  });
 }
 
+// POST：用 no-cors 送出（不需要讀回應）
 async function sheetPost(action, tab, data) {
   const url = getGasUrl();
   if (!url) { saveLocalData(); return; }
   try {
     await fetch(url, {
-      method: 'POST', mode: 'cors',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action, sheet: tab, data })
     });
-    saveLocalData();
-  } catch {
-    saveLocalData();
-  }
+  } catch {}
+  saveLocalData();
 }
 
-// ✅ 出貨專用：呼叫 action:'ship'，Apps Script 會更新狀態 + 寄通知信
+// 出貨專用：呼叫 action:'ship'，Apps Script 會更新狀態 + 寄通知信
 async function sheetShip(orderId, tracking) {
   const url = getGasUrl();
   if (!url) { saveLocalData(); return; }
   try {
     await fetch(url, {
-      method: 'POST', mode: 'cors',
-      headers: { 'Content-Type': 'application/json' },
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action: 'ship', data: { id: orderId, tracking: tracking || '' } })
     });
-    saveLocalData();
-  } catch {
-    saveLocalData();
-  }
+  } catch {}
+  saveLocalData();
 }
 
 function setSyncLabel(txt) { document.getElementById('sync-label').textContent = txt; }
