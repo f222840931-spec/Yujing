@@ -27,6 +27,8 @@
     --warn-bg: rgba(212,168,67,0.12);
     --info: #6a9fd8;
     --info-bg: rgba(106,159,216,0.12);
+    --ship: #a78bfa;
+    --ship-bg: rgba(167,139,250,0.12);
     --radius: 10px;
     --radius-sm: 6px;
   }
@@ -150,6 +152,8 @@
   .btn.primary:hover { background: var(--accent2); }
   .btn.danger { color: var(--danger); border-color: rgba(224,92,92,0.3); background: transparent; }
   .btn.danger:hover { background: var(--danger-bg); }
+  .btn.ship-btn { color: var(--ship); border-color: rgba(167,139,250,0.35); background: transparent; font-weight: 500; }
+  .btn.ship-btn:hover { background: var(--ship-bg); }
   .btn.sm { padding: 4px 10px; font-size: 12px; }
 
   /* ── TABLE ── */
@@ -176,6 +180,7 @@
   .badge.new { background: var(--info-bg); color: var(--info); }
   .badge.done { background: var(--success-bg); color: var(--success); }
   .badge.cancel { background: var(--danger-bg); color: var(--danger); }
+  .badge.shipped { background: var(--ship-bg); color: var(--ship); }
 
   /* ── MODAL ── */
   .modal-bg {
@@ -200,6 +205,16 @@
   .form-row textarea { resize: vertical; min-height: 80px; }
   .form-row select option { background: var(--surface2); }
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 1.25rem; }
+
+  /* ── SHIP MODAL SPECIAL ── */
+  .ship-info-box {
+    background: var(--ship-bg); border: 0.5px solid rgba(167,139,250,0.3);
+    border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 16px; font-size: 13px;
+  }
+  .ship-info-box .ship-order-id { font-weight: 600; color: var(--ship); }
+  .ship-info-box .ship-detail { color: var(--text2); font-size: 12px; margin-top: 3px; }
+  .btn.confirm-ship { background: var(--ship); border-color: var(--ship); color: #fff; font-weight: 600; }
+  .btn.confirm-ship:hover { opacity: 0.88; }
 
   /* ── SETUP NOTICE ── */
   .setup-box {
@@ -231,6 +246,9 @@
   .config-row { display: flex; gap: 8px; align-items: stretch; }
   .config-row input { flex: 1; padding: 9px 12px; background: var(--surface2); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); font-size: 13px; font-family: inherit; outline: none; }
   .config-row input:focus { border-color: var(--accent); }
+
+  /* ── ACTION CELL ── */
+  .action-cell { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 </style>
 </head>
 <body>
@@ -343,7 +361,11 @@
                 <input class="search-input" id="o-search" placeholder="搜尋訂單…" oninput="renderOrders()">
                 <select class="filter-select" id="o-status-filter" onchange="renderOrders()">
                   <option value="">所有狀態</option>
-                  <option>新訂單</option><option>處理中</option><option>已完成</option><option>已取消</option>
+                  <option>新訂單</option>
+                  <option>處理中</option>
+                  <option>已出貨</option>
+                  <option>已完成</option>
+                  <option>已取消</option>
                 </select>
               </div>
             </div>
@@ -403,55 +425,10 @@
 
             <div style="font-size:13px;color:var(--text2);line-height:2">
               <strong style="color:var(--accent)">Google Sheets 設定步驟：</strong><br>
-              1. 前往 <a href="https://sheets.google.com" target="_blank" style="color:var(--info)">Google Sheets</a>，新增試算表，建立兩個工作表：<code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">products</code> 和 <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">orders</code><br>
-              2. <strong>products</strong> 欄位：<code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">id | name | category | price | stock | description</code><br>
-              3. <strong>orders</strong> 欄位：<code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">id | customer | phone | product | amount | status | date</code><br>
-              4. 在 Sheets 選單點「擴充功能 → Apps Script」，貼上下方程式碼並部署為「網路應用程式」<br>
-              5. 將部署後的 URL 填入上方「Apps Script 網址」欄位<br><br>
-              <details>
-                <summary style="cursor:pointer;color:var(--accent);font-weight:500">▶ 點此展開 Apps Script 程式碼（複製貼上）</summary>
-                <pre style="background:var(--surface2);border:0.5px solid var(--border2);border-radius:8px;padding:1rem;font-size:11.5px;overflow-x:auto;margin-top:.75rem;line-height:1.7;color:var(--text2)">function doGet(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet();
-  const tab = e.parameter.sheet || 'products';
-  const ws = sheet.getSheetByName(tab);
-  const rows = ws.getDataRange().getValues();
-  const keys = rows[0];
-  const data = rows.slice(1).map(r => {
-    const obj = {};
-    keys.forEach((k,i) => obj[k] = r[i]);
-    return obj;
-  });
-  return ContentService.createTextOutput(JSON.stringify(data))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function doPost(e) {
-  const sheet = SpreadsheetApp.getActiveSpreadsheet();
-  const payload = JSON.parse(e.postData.contents);
-  const { action, sheet: tab, data } = payload;
-  const ws = sheet.getSheetByName(tab);
-  if (action === 'append') {
-    const keys = ws.getRange(1,1,1,ws.getLastColumn()).getValues()[0];
-    ws.appendRow(keys.map(k => data[k] ?? ''));
-  } else if (action === 'update') {
-    const rows = ws.getDataRange().getValues();
-    for (let i = 1; i &lt; rows.length; i++) {
-      if (String(rows[i][0]) === String(data.id)) {
-        const keys = rows[0];
-        keys.forEach((k,j) => ws.getRange(i+1, j+1).setValue(data[k] ?? rows[i][j]));
-        break;
-      }
-    }
-  } else if (action === 'delete') {
-    const rows = ws.getDataRange().getValues();
-    for (let i = 1; i &lt; rows.length; i++) {
-      if (String(rows[i][0]) === String(data.id)) { ws.deleteRow(i+1); break; }
-    }
-  }
-  return ContentService.createTextOutput(JSON.stringify({ok:true}))
-    .setMimeType(ContentService.MimeType.JSON);
-}</pre>
-              </details>
+              1. 前往 <a href="https://sheets.google.com" target="_blank" style="color:var(--info)">Google Sheets</a>，確認試算表有 <code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">products</code>、<code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">orders</code>、<code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">members</code> 三個工作表<br>
+              2. <strong>orders</strong> 欄位：<code style="background:rgba(0,0,0,.3);padding:1px 5px;border-radius:3px">id | customer | phone | product | amount | status | date</code><br>
+              3. 在 Sheets 選單點「擴充功能 → Apps Script」，貼上最新版程式碼並部署為「網路應用程式」<br>
+              4. 將部署後的 URL 填入上方「Apps Script 網址」欄位<br>
             </div>
           </div>
         </div>
@@ -493,6 +470,30 @@ function doPost(e) {
   </div>
 </div>
 
+<!-- ════ SHIP MODAL（出貨視窗）════ -->
+<div class="modal-bg" id="ship-modal">
+  <div class="modal">
+    <div class="modal-title">🚚 確認出貨</div>
+    <div class="ship-info-box">
+      <div class="ship-order-id" id="ship-order-id"></div>
+      <div class="ship-detail" id="ship-order-detail"></div>
+    </div>
+    <div class="form-row">
+      <label>物流單號（選填）</label>
+      <input id="ship-tracking" placeholder="例：700123456789">
+    </div>
+    <div class="form-row">
+      <label style="font-size:11px;color:var(--text3)">
+        ✉️ 系統會自動從 members 表用電話號碼找到客戶 Email，並寄送出貨通知信。
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('ship-modal')">取消</button>
+      <button class="btn confirm-ship" onclick="confirmShip()">確認出貨</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════
 //  CONFIG (stored in localStorage)
@@ -506,8 +507,7 @@ function setCfg(obj) {
   localStorage.setItem(CFG_KEY, JSON.stringify(cfg));
 }
 
-const DEFAULT_PASSWORD = 'admin123'; // ← 修改這裡設定預設密碼
-
+const DEFAULT_PASSWORD = 'admin123';
 function getPassword() { return getCfg().password || DEFAULT_PASSWORD; }
 
 // ══════════════════════════════
@@ -531,7 +531,7 @@ function doLogout() {
 }
 
 // ══════════════════════════════
-//  DATA STORE (localStorage as fallback)
+//  DATA STORE
 // ══════════════════════════════
 const DATA_KEY = 'hair_admin_data';
 let appData = { products: [], orders: [], categories: ['護髮','洗髮','燙染','造型','頭皮護理'] };
@@ -560,7 +560,7 @@ async function sheetFetch(tabName) {
     const data = await res.json();
     setSyncLabel('已同步');
     return data;
-  } catch (e) {
+  } catch {
     setSyncLabel('離線模式');
     return null;
   }
@@ -581,6 +581,22 @@ async function sheetPost(action, tab, data) {
   }
 }
 
+// ✅ 出貨專用：呼叫 action:'ship'，Apps Script 會更新狀態 + 寄通知信
+async function sheetShip(orderId, tracking) {
+  const url = getGasUrl();
+  if (!url) { saveLocalData(); return; }
+  try {
+    await fetch(url, {
+      method: 'POST', mode: 'cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'ship', data: { id: orderId, tracking: tracking || '' } })
+    });
+    saveLocalData();
+  } catch {
+    saveLocalData();
+  }
+}
+
 function setSyncLabel(txt) { document.getElementById('sync-label').textContent = txt; }
 
 async function syncAll() {
@@ -592,7 +608,8 @@ async function syncAll() {
   }));
   if (oData) appData.orders = oData.map(r => ({
     id: r.id, customer: r.customer, phone: r.phone||'', product: r.product,
-    amount: Number(r.amount)||0, status: r.status||'新訂單', date: r.date||''
+    amount: Number(r.amount)||0, status: r.status||'新訂單', date: r.date||'',
+    tracking: r.tracking||''
   }));
   saveLocalData();
   refreshCurrentPage();
@@ -753,16 +770,23 @@ async function deleteProduct(id) {
 // ══════════════════════════════
 //  ORDERS
 // ══════════════════════════════
+let shipOrderId = null;
+
 function renderOrders() {
   const q = (document.getElementById('o-search').value || '').toLowerCase();
   const sf = document.getElementById('o-status-filter').value;
   let list = appData.orders.filter(o =>
-    (!q || o.id.toLowerCase().includes(q) || o.customer.includes(q) || (o.phone||'').includes(q)) &&
+    (!q || String(o.id).toLowerCase().includes(q) || o.customer.includes(q) || (o.phone||'').includes(q)) &&
     (!sf || o.status === sf)
   ).slice().reverse();
   const tb = document.getElementById('order-tbody');
   if (!list.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">沒有符合的訂單</td></tr>'; return; }
-  tb.innerHTML = list.map(o => `
+  tb.innerHTML = list.map(o => {
+    const isShipped = o.status === '已出貨';
+    const shipBtn = isShipped
+      ? `<span style="font-size:11px;color:var(--ship)">${o.tracking ? '📦 ' + o.tracking : '已出貨'}</span>`
+      : `<button class="btn sm ship-btn" onclick="openShipModal('${o.id}')">🚚 出貨</button>`;
+    return `
     <tr>
       <td style="font-weight:500">${o.id}</td>
       <td>${o.customer}</td>
@@ -771,18 +795,66 @@ function renderOrders() {
       <td>NT$${Number(o.amount).toLocaleString()}</td>
       <td>${orderBadge(o.status)}</td>
       <td>
-        <select class="btn sm" onchange="updateOrderStatus('${o.id}',this.value)" style="padding:4px 6px">
-          ${['新訂單','處理中','已完成','已取消'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
-        </select>
+        <div class="action-cell">
+          <select class="btn sm" onchange="updateOrderStatus('${o.id}',this.value)" style="padding:4px 6px">
+            ${['新訂單','處理中','已出貨','已完成','已取消'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
+          </select>
+          ${shipBtn}
+        </div>
       </td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
+}
+
+// 開啟出貨確認視窗
+function openShipModal(id) {
+  const o = appData.orders.find(x => String(x.id) === String(id));
+  if (!o) return;
+  shipOrderId = id;
+  document.getElementById('ship-order-id').textContent = '訂單編號：' + o.id;
+  document.getElementById('ship-order-detail').textContent = o.customer + '　' + o.product + '　NT$' + Number(o.amount).toLocaleString();
+  document.getElementById('ship-tracking').value = '';
+  document.getElementById('ship-modal').classList.add('show');
+}
+
+// 確認出貨 → 更新狀態 + 呼叫 Apps Script ship action
+async function confirmShip() {
+  if (!shipOrderId) return;
+  const tracking = document.getElementById('ship-tracking').value.trim();
+  const btn = document.querySelector('.confirm-ship');
+  btn.textContent = '出貨中…';
+  btn.disabled = true;
+
+  // 更新本地狀態
+  const o = appData.orders.find(x => String(x.id) === String(shipOrderId));
+  if (o) {
+    o.status = '已出貨';
+    o.tracking = tracking;
+  }
+
+  // 呼叫 Apps Script（更新 Sheets + 寄通知信）
+  await sheetShip(shipOrderId, tracking);
+
+  btn.textContent = '確認出貨';
+  btn.disabled = false;
+  closeModal('ship-modal');
+  shipOrderId = null;
+  renderOrders();
+  updateDashboard();
 }
 
 async function updateOrderStatus(id, status) {
+  // 如果選到「已出貨」改走出貨視窗流程
+  if (status === '已出貨') {
+    openShipModal(id);
+    // 把 select 還原成原本的狀態（讓 modal 決定）
+    renderOrders();
+    return;
+  }
   const o = appData.orders.find(x => String(x.id) === String(id));
   if (o) {
     o.status = status;
-    await sheetPost('update', 'orders', { ...o, category: o.cat });
+    await sheetPost('update', 'orders', { id: o.id, customer: o.customer, phone: o.phone, product: o.product, amount: o.amount, status, date: o.date });
   }
   renderOrders();
   updateDashboard();
@@ -796,7 +868,7 @@ async function saveOrder() {
   if (!customer || !product) return;
   const id = '#' + String(appData.orders.length + 1).padStart(4, '0');
   const date = new Date().toLocaleDateString('zh-TW');
-  const o = { id, customer, phone, product, amount, status: '新訂單', date };
+  const o = { id, customer, phone, product, amount, status: '新訂單', date, tracking: '' };
   appData.orders.push(o);
   await sheetPost('append', 'orders', o);
   closeModal('order-modal');
@@ -869,7 +941,7 @@ function stockBadge(stock) {
   return `<span class="badge ok">${stock} 件</span>`;
 }
 function orderBadge(status) {
-  const map = { '新訂單':'new','處理中':'low','已完成':'done','已取消':'cancel' };
+  const map = { '新訂單':'new', '處理中':'low', '已出貨':'shipped', '已完成':'done', '已取消':'cancel' };
   return `<span class="badge ${map[status]||'new'}">${status}</span>`;
 }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
