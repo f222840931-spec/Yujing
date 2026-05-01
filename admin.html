@@ -6,6 +6,19 @@
 <title>美髮商品後台管理</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script>
+  firebase.initializeApp({
+    apiKey: "AIzaSyB_jPGpG0sNss9nOLjXLyKTm-AtmSSkRqk",
+    authDomain: "yujing-367f2.firebaseapp.com",
+    projectId: "yujing-367f2",
+    storageBucket: "yujing-367f2.firebasestorage.app",
+    messagingSenderId: "1023600618166",
+    appId: "1:1023600618166:web:72005921fbae7609a3d417"
+  });
+  var db = firebase.firestore();
+</script>
 <style>
   :root {
     --bg: #0f0f11;
@@ -395,8 +408,8 @@
         <!-- CONFIG -->
         <div class="page" id="page-config">
           <div class="setup-box">
-            <strong>設定說明：</strong>填入你的 Google Sheets ID 與 Apps Script URL，後台就會自動讀取與寫入資料。<br>
-            詳細設定步驟請看下方說明。
+            <strong>系統說明：</strong>訂單資料已直接連接 <strong style="color:var(--accent)">Firebase Firestore</strong>，狀態更新即時同步到前台會員頁面。<br>
+            商品管理若需同步至 Google Sheets，請填入下方設定。
           </div>
           <div class="card" style="padding:1.5rem">
             <div class="config-section">
@@ -611,18 +624,15 @@ async function sheetShip(orderId, tracking) {
 function setSyncLabel(txt) { document.getElementById('sync-label').textContent = txt; }
 
 async function syncAll() {
+  // 訂單由 Firestore 即時同步，這裡只同步商品（仍走 Google Sheets）
   const pData = await sheetFetch('products');
-  const oData = await sheetFetch('orders');
-  if (pData) appData.products = pData.map(r => ({
-    id: r.id, name: r.name, cat: r.category, price: Number(r.price)||0,
-    stock: Number(r.stock)||0, desc: r.description||''
-  }));
-  if (oData) appData.orders = oData.map(r => ({
-    id: r.id, customer: r.customer, phone: r.phone||'', product: r.product,
-    amount: Number(r.amount)||0, status: r.status||'新訂單', date: r.date||'',
-    tracking: r.tracking||''
-  }));
-  saveLocalData();
+  if (pData) {
+    appData.products = pData.map(r => ({
+      id: r.id, name: r.name, cat: r.category, price: Number(r.price)||0,
+      stock: Number(r.stock)||0, desc: r.description||''
+    }));
+    saveLocalData();
+  }
   refreshCurrentPage();
 }
 
@@ -632,7 +642,8 @@ async function syncAll() {
 function initAdmin() {
   loadLocalData();
   loadConfigFields();
-  syncAll();
+  startOrderListener(); // Firestore 即時監聽訂單
+  syncAll();            // Google Sheets 同步商品（如有設定）
   updateDashboard();
 }
 
@@ -779,9 +790,56 @@ async function deleteProduct(id) {
 }
 
 // ══════════════════════════════
-//  ORDERS
+//  ORDERS（Firestore 即時同步）
 // ══════════════════════════════
 let shipOrderId = null;
+let unsubscribeOrders = null;
+
+// 前後台狀態對應表
+const STATUS_TO_LABEL = {
+  'pending':   '新訂單',
+  'confirmed': '處理中',
+  'shipping':  '已出貨',
+  'delivered': '已完成',
+  'cancelled': '已取消',
+};
+const LABEL_TO_STATUS = {
+  '新訂單': 'pending',
+  '處理中': 'confirmed',
+  '已出貨': 'shipping',
+  '已完成': 'delivered',
+  '已取消': 'cancelled',
+};
+
+// 啟動 Firestore 即時監聽
+function startOrderListener() {
+  if (unsubscribeOrders) unsubscribeOrders();
+  setSyncLabel('連線中…');
+  unsubscribeOrders = db.collection('orders')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snap => {
+      appData.orders = snap.docs.map(doc => {
+        const d = doc.data();
+        const label = STATUS_TO_LABEL[d.status] || d.status || '新訂單';
+        return {
+          _docId: doc.id,
+          id: d.orderId || doc.id,
+          customer: d.memberEmail || '—',
+          phone: d.phone || '',
+          product: d.items ? d.items.map(i => i.name + '×' + i.qty).join('、') : '',
+          amount: d.total || 0,
+          status: label,
+          tracking: d.tracking || '',
+          date: d.createdAt ? new Date(d.createdAt.seconds * 1000).toLocaleDateString('zh-TW') : '',
+        };
+      });
+      setSyncLabel('已連線（即時）');
+      refreshCurrentPage();
+    }, err => {
+      console.error('Firestore 監聽失敗', err);
+      setSyncLabel('連線失敗');
+    });
+}
 
 function renderOrders() {
   const q = (document.getElementById('o-search').value || '').toLowerCase();
@@ -789,14 +847,14 @@ function renderOrders() {
   let list = appData.orders.filter(o =>
     (!q || String(o.id).toLowerCase().includes(q) || o.customer.includes(q) || (o.phone||'').includes(q)) &&
     (!sf || o.status === sf)
-  ).slice().reverse();
+  );
   const tb = document.getElementById('order-tbody');
   if (!list.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">沒有符合的訂單</td></tr>'; return; }
   tb.innerHTML = list.map(o => {
     const isShipped = o.status === '已出貨';
     const shipBtn = isShipped
       ? `<span style="font-size:11px;color:var(--ship)">${o.tracking ? '📦 ' + o.tracking : '已出貨'}</span>`
-      : `<button class="btn sm ship-btn" onclick="openShipModal('${o.id}')">🚚 出貨</button>`;
+      : `<button class="btn sm ship-btn" onclick="openShipModal('${o._docId}')">🚚 出貨</button>`;
     return `
     <tr>
       <td style="font-weight:500">${o.id}</td>
@@ -807,7 +865,7 @@ function renderOrders() {
       <td>${orderBadge(o.status)}</td>
       <td>
         <div class="action-cell">
-          <select class="btn sm" onchange="updateOrderStatus('${o.id}',this.value)" style="padding:4px 6px">
+          <select class="btn sm" onchange="updateOrderStatus('${o._docId}',this.value)" style="padding:4px 6px">
             ${['新訂單','處理中','已出貨','已完成','已取消'].map(s=>`<option${s===o.status?' selected':''}>${s}</option>`).join('')}
           </select>
           ${shipBtn}
@@ -818,57 +876,53 @@ function renderOrders() {
 }
 
 // 開啟出貨確認視窗
-function openShipModal(id) {
-  const o = appData.orders.find(x => String(x.id) === String(id));
+function openShipModal(docId) {
+  const o = appData.orders.find(x => x._docId === docId);
   if (!o) return;
-  shipOrderId = id;
+  shipOrderId = docId;
   document.getElementById('ship-order-id').textContent = '訂單編號：' + o.id;
   document.getElementById('ship-order-detail').textContent = o.customer + '　' + o.product + '　NT$' + Number(o.amount).toLocaleString();
   document.getElementById('ship-tracking').value = '';
   document.getElementById('ship-modal').classList.add('show');
 }
 
-// 確認出貨 → 更新狀態 + 呼叫 Apps Script ship action
+// 確認出貨 → 直接更新 Firestore
 async function confirmShip() {
   if (!shipOrderId) return;
   const tracking = document.getElementById('ship-tracking').value.trim();
   const btn = document.querySelector('.confirm-ship');
   btn.textContent = '出貨中…';
   btn.disabled = true;
-
-  // 更新本地狀態
-  const o = appData.orders.find(x => String(x.id) === String(shipOrderId));
-  if (o) {
-    o.status = '已出貨';
-    o.tracking = tracking;
+  try {
+    await db.collection('orders').doc(shipOrderId).update({
+      status: 'shipping',
+      tracking: tracking,
+      carrier: tracking,
+    });
+  } catch(e) {
+    alert('出貨更新失敗：' + e.message);
   }
-
-  // 呼叫 Apps Script（更新 Sheets + 寄通知信）
-  await sheetShip(shipOrderId, tracking);
-
   btn.textContent = '確認出貨';
   btn.disabled = false;
   closeModal('ship-modal');
   shipOrderId = null;
-  renderOrders();
-  updateDashboard();
+  // onSnapshot 會自動刷新，不需手動 renderOrders
 }
 
-async function updateOrderStatus(id, status) {
-  // 如果選到「已出貨」改走出貨視窗流程
-  if (status === '已出貨') {
-    openShipModal(id);
-    // 把 select 還原成原本的狀態（讓 modal 決定）
-    renderOrders();
+// 更新訂單狀態 → 直接寫 Firestore
+async function updateOrderStatus(docId, label) {
+  if (label === '已出貨') {
+    openShipModal(docId);
+    renderOrders(); // 還原 select 顯示
     return;
   }
-  const o = appData.orders.find(x => String(x.id) === String(id));
-  if (o) {
-    o.status = status;
-    await sheetPost('update', 'orders', { id: o.id, customer: o.customer, phone: o.phone, product: o.product, amount: o.amount, status, date: o.date });
+  const fsStatus = LABEL_TO_STATUS[label] || label;
+  try {
+    await db.collection('orders').doc(docId).update({ status: fsStatus });
+  } catch(e) {
+    alert('狀態更新失敗：' + e.message);
   }
-  renderOrders();
-  updateDashboard();
+  // onSnapshot 自動刷新
 }
 
 async function saveOrder() {
@@ -877,14 +931,24 @@ async function saveOrder() {
   const product = document.getElementById('om-product').value.trim();
   const amount = parseInt(document.getElementById('om-amount').value) || 0;
   if (!customer || !product) return;
-  const id = '#' + String(appData.orders.length + 1).padStart(4, '0');
-  const date = new Date().toLocaleDateString('zh-TW');
-  const o = { id, customer, phone, product, amount, status: '新訂單', date, tracking: '' };
-  appData.orders.push(o);
-  await sheetPost('append', 'orders', o);
+  const orderId = '#' + Date.now();
+  try {
+    await db.collection('orders').add({
+      orderId,
+      memberEmail: customer,
+      phone,
+      items: [{ name: product, qty: 1, price: amount }],
+      total: amount,
+      status: 'pending',
+      tracking: '',
+      carrier: '',
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    });
+  } catch(e) {
+    alert('新增訂單失敗：' + e.message);
+  }
   closeModal('order-modal');
-  renderOrders();
-  updateDashboard();
+  // onSnapshot 自動刷新
 }
 
 // ══════════════════════════════
