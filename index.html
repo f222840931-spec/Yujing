@@ -501,7 +501,18 @@
   <div style="font-size:13px;font-weight:500;color:var(--text);margin-bottom:12px">會員登入</div>
   <div class="form-group"><label>電子信箱</label><input type="email" placeholder="請輸入電子信箱"></div>
   <div class="form-group"><label>密碼</label><input type="password" placeholder="請輸入密碼"></div>
-  <button class="submit-btn" onclick="fakeLogin()" style="margin-bottom:16px">登 入</button>
+  <button class="submit-btn" onclick="fakeLogin()" style="margin-bottom:10px">登 入</button>
+
+  <div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px">
+    <div style="flex:1;height:0.5px;background:var(--border)"></div>
+    <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">或使用社群帳號登入</span>
+    <div style="flex:1;height:0.5px;background:var(--border)"></div>
+  </div>
+
+  <button onclick="loginWithFacebook()" style="width:100%;padding:11px;margin-bottom:16px;background:#1877F2;color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'Noto Sans TC',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:background 0.2s" onmouseover="this.style.background='#1464d0'" onmouseout="this.style.background='#1877F2'">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+    使用 Facebook 帳號登入
+  </button>
 
   <div class="register-box">
     <div class="register-box-title">
@@ -790,6 +801,28 @@ function closeMemberModal() {
   document.getElementById('memberModal').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
 }
+async function loginWithFacebook() {
+  const provider = new firebase.auth.FacebookAuthProvider();
+  try {
+    const result = await auth.signInWithPopup(provider);
+    const user = result.user;
+    if (result.additionalUserInfo && result.additionalUserInfo.isNewUser) {
+      showToast("🎫 Facebook 註冊成功！已獲得 $100 折價券");
+    } else {
+      showToast("Facebook 登入成功！歡迎回來 👋");
+    }
+    closeMemberModal();
+  } catch(e) {
+    if (e.code === "auth/popup-closed-by-user") {
+      showToast("登入視窗已關閉");
+    } else if (e.code === "auth/account-exists-with-different-credential") {
+      showToast("此信箱已用其他方式註冊，請改用信箱登入");
+    } else {
+      showToast("Facebook 登入失敗，請稍後再試");
+    }
+  }
+}
+
 async function fakeLogin() {
   const inputs = document.querySelectorAll('#memberModal input');
   const email = inputs[0].value.trim();
