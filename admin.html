@@ -913,16 +913,17 @@ async function confirmShip() {
 async function updateOrderStatus(docId, label) {
   if (label === '已出貨') {
     openShipModal(docId);
-    renderOrders(); // 還原 select 顯示
+    renderOrders();
     return;
   }
-  const fsStatus = LABEL_TO_STATUS[label] || label;
+  const fsStatus = LABEL_TO_STATUS[label];
+  if (!fsStatus) { alert('無法識別狀態：' + label); renderOrders(); return; }
   try {
     await db.collection('orders').doc(docId).update({ status: fsStatus });
   } catch(e) {
-    alert('狀態更新失敗：' + e.message);
+    alert('狀態更新失敗：' + e.message + '\n\n請確認 Firestore 規則是否允許寫入。');
+    renderOrders();
   }
-  // onSnapshot 自動刷新
 }
 
 async function saveOrder() {
