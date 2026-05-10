@@ -446,9 +446,22 @@
       宅配到府（運費 $100）
     </label>
     <label class="radio-label">
-      <input type="radio" name="shipping" value="60" onchange="updateShipping(this)">
+      <input type="radio" name="shipping" value="60" onchange="updateShipping(this);document.getElementById('cvsBox').style.display='block'">
       超商店到店（運費 $60）
     </label>
+    <!-- 選擇超商門市 -->
+    <div id="cvsBox" style="display:none;margin-top:10px;">
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button type="button" onclick="selectStore('UNIMART')" style="flex:1;padding:10px 4px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;">📦 選擇 7-ELEVEN</button>
+        <button type="button" onclick="selectStore('FAMI')" style="flex:1;padding:10px 4px;border:1.5px solid #e0e0e0;border-radius:8px;background:#fff;font-size:13px;cursor:pointer;font-family:inherit;">📦 選擇 全家</button>
+      </div>
+      <div id="cvsResult" style="display:none;background:#f0f7f4;border:1px solid #9fd4c4;border-radius:8px;padding:10px;font-size:13px;line-height:1.8;">
+        <div style="font-weight:500;color:#2a7a6a;margin-bottom:2px;">✅ 已選擇門市</div>
+        <div>門市名稱：<strong id="cvsStoreName"></strong></div>
+        <div>門市地址：<span id="cvsStoreAddr"></span></div>
+        <input type="hidden" id="cvsStoreID">
+      </div>
+    </div>
   </div>
 
   <div class="section-divider">付款方式</div>
@@ -989,5 +1002,45 @@ renderProducts();
   <button class="add-btn" style="margin-top:16px;background:#e55" onclick="logout()">登出</button>
 </div>
 
+<script>
+function selectStore(type) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = 'https://logistics-stage.ecpay.com.tw/Express/map';
+  form.target = '_blank';
+  const fields = {
+    MerchantID: '2000132',
+    LogisticsType: 'CVS',
+    LogisticsSubType: type,
+    IsCollection: 'N',
+    ServerReplyURL: 'https://script.google.com/macros/s/AKfycbygFYTxpfyogSGzCHDZ4AIbF4HFNQ7tSSzlE6yO8Sj9qQ0KJqOWXFWn10CTIYj5Lpgk/exec',
+    ExtraData: ''
+  };
+  for (let k in fields) {
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = k; inp.value = fields[k];
+    form.appendChild(inp);
+  }
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
+}
+window.addEventListener('load', function() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('storeID')) {
+    const storeName = decodeURIComponent(p.get('storeName') || '');
+    const storeAddr = decodeURIComponent(p.get('storeAddr') || '');
+    document.getElementById('cvsStoreID').value = p.get('storeID');
+    document.getElementById('cvsStoreName').textContent = storeName;
+    document.getElementById('cvsStoreAddr').textContent = storeAddr;
+    document.getElementById('cvsResult').style.display = 'block';
+    document.getElementById('cvsBox').style.display = 'block';
+    document.getElementById('checkAddr').value = storeName + '｜' + storeAddr;
+    const radio = document.querySelector('input[name="shipping"][value="60"]');
+    if (radio) { radio.checked = true; updateShipping(radio); }
+    openCheckout();
+  }
+});
+</script>
 </body>
 </html>
