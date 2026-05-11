@@ -470,7 +470,7 @@
       <input type="radio" name="payment" value="transfer" checked onchange="toggleTransferInfo(true)">
       銀行轉帳（下單後匯款至指定帳號）
     </label>
-    <label class="radio-label">
+    <label class="radio-label" id="codOption">
       <input type="radio" name="payment" value="cod" onchange="toggleTransferInfo(false)">
       貨到付款（商品送達時付款）
     </label>
@@ -729,6 +729,16 @@ function updateShipping(el) {
   const ship = free ? 0 : shippingFee;
   document.getElementById('checkoutShipBar').textContent = free ? '🎉 已達免運門檻！' : `運費：$${ship}`;
   document.getElementById('checkoutTotal').textContent = `$${calcCheckoutTotal()}`;
+  // 超商店到店不能貨到付款
+  const isCVS = el.value === '60';
+  const codOption = document.getElementById('codOption');
+  if (codOption) {
+    codOption.style.display = isCVS ? 'none' : '';
+    if (isCVS && document.querySelector('input[name="payment"][value="cod"]').checked) {
+      document.querySelector('input[name="payment"][value="transfer"]').checked = true;
+      toggleTransferInfo(true);
+    }
+  }
   document.getElementById('checkAddr').placeholder = shippingFee === 60 ? '請輸入超商名稱及門市' : '請輸入完整收件地址';
 }
 
