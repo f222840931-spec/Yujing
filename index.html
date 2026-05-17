@@ -1012,10 +1012,10 @@ renderProducts();
 function selectStore(type) {
   const form = document.createElement('form');
   form.method = 'POST';
-  form.action = 'https://logistics-stage.ecpay.com.tw/Express/map';
+  form.action = 'https://logistics.ecpay.com.tw/Express/map';
   form.target = '_blank';
   const fields = {
-    MerchantID: '2000132',
+    MerchantID: '3500201',
     LogisticsType: 'CVS',
     LogisticsSubType: type,
     IsCollection: 'N',
