@@ -1009,22 +1009,46 @@ renderProducts();
 </div>
 
 <script>
-function selectStore(type) {
+async function selectStore(type) {
+  const HASH_KEY = '2CI3aJ40B928q7q2';
+  const HASH_IV  = 'qzbRVXNkEblpunWB';
+  const MERCHANT_ID = '3500201';
+  const SERVER_REPLY_URL = 'https://script.google.com/macros/s/AKfycbygFYTxpfyogSGzCHDZ4AIbF4HFNQ7tSSzlE6yO8Sj9qQ0KJqOWXFWn10CTIYj5Lpgk/exec';
+
+  const fields = {
+    MerchantID: MERCHANT_ID,
+    LogisticsType: 'CVS',
+    LogisticsSubType: type,
+    IsCollection: 'N',
+    ServerReplyURL: SERVER_REPLY_URL,
+    ExtraData: ''
+  };
+
+  // 產生 CheckMacValue（綠界規格）
+  const sorted = Object.keys(fields).sort((a,b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  let raw = 'HashKey=' + HASH_KEY;
+  sorted.forEach(k => { raw += '&' + k + '=' + fields[k]; });
+  raw += '&HashIV=' + HASH_IV;
+  const encoded = encodeURIComponent(raw).toLowerCase()
+    .replace(/%20/g,'+').replace(/%21/g,'!').replace(/%28/g,'(')
+    .replace(/%29/g,')').replace(/%2a/g,'*').replace(/%2d/g,'-')
+    .replace(/%5f/g,'_').replace(/%2e/g,'.').replace(/%7e/g,'~');
+
+  // SHA256
+  const msgBuffer = new TextEncoder().encode(encoded);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const checkMac = hashArray.map(b => b.toString(16).padStart(2,'0')).join('').toUpperCase();
+
   const form = document.createElement('form');
   form.method = 'POST';
   form.action = 'https://logistics.ecpay.com.tw/Express/map';
   form.target = '_blank';
-  const fields = {
-    MerchantID: '3500201',
-    LogisticsType: 'CVS',
-    LogisticsSubType: type,
-    IsCollection: 'N',
-    ServerReplyURL: 'https://script.google.com/macros/s/AKfycbygFYTxpfyogSGzCHDZ4AIbF4HFNQ7tSSzlE6yO8Sj9qQ0KJqOWXFWn10CTIYj5Lpgk/exec',
-    ExtraData: ''
-  };
-  for (let k in fields) {
+
+  const allFields = { ...fields, CheckMacValue: checkMac };
+  for (let k in allFields) {
     const inp = document.createElement('input');
-    inp.type = 'hidden'; inp.name = k; inp.value = fields[k];
+    inp.type = 'hidden'; inp.name = k; inp.value = allFields[k];
     form.appendChild(inp);
   }
   document.body.appendChild(form);
